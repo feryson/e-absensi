@@ -74,11 +74,12 @@ window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault(); // Mencegah banner default muncul
     deferredPrompt = e;
     dom.btnInstallPwa.classList.remove('hidden');
-    dom.btnInstallPwa.classList.add('flex');
+    dom.btnInstallPwa.classList.add('flex', 'animate-pulse'); // Tambahkan efek kedip untuk menarik perhatian
 });
 
 // 3. Tombol Install PWA Diklik
 dom.btnInstallPwa.addEventListener('click', async () => {
+    dom.btnInstallPwa.classList.remove('animate-pulse');
     if (deferredPrompt) {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
@@ -300,11 +301,11 @@ function validasiStatusAbsensi() {
     if (tipeAbsen === 'TIDAK_HADIR') {
         // MODE IZIN / SAKIT / CUTI
         dom.conKet.classList.remove('hidden');
-        ubahStatusLokasi('warning', 'Mode Izin Aktif. Jarak GPS & Kamera diabaikan.');
+        ubahStatusLokasi('warning', 'Mode Izin Aktif. Jarak GPS diabaikan, namun WAJIB foto selfie.');
         
-        // Logika: Tombol aktif JIKA DAN HANYA JIKA keterangan sudah diketik.
+        // Logika: Tombol aktif JIKA keterangan diketik DAN kamera aktif.
         const keteranganVal = dom.inpKet.value.trim();
-        dom.btnAbsen.disabled = keteranganVal.length === 0;
+        dom.btnAbsen.disabled = !(keteranganVal.length > 0 && isKameraAktif);
         
     } else {
         // MODE MASUK / KELUAR NORMAL (Wajib GPS & Kamera)
@@ -358,7 +359,7 @@ dom.btnAbsen.addEventListener('click', async () => {
     dom.btnAbsen.disabled = true;
     
     const tipeAbsen = dom.selType.value;
-    const base64Foto = (tipeAbsen !== 'TIDAK_HADIR') ? ambilFotoSelfie() : ""; // Izin tidak wajib foto
+    const base64Foto = ambilFotoSelfie(); // Wajib ambil foto untuk SEMUA mode (Masuk, Keluar, dan Izin)
     
     const payloadData = {
         nik: currentUser.nik,
