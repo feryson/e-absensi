@@ -9,7 +9,7 @@ const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbwS28aW3uV5_OiJ
 // Koordinat Kantor Pusat (Sesuaikan di Kode.gs juga)
 const KANTOR_LAT = -5.300456628608312;
 const KANTOR_LNG = 105.03455748021706;
-const MAKSIMAL_RADIUS_METER = 15; // Radius toleransi (meter)
+const MAKSIMAL_RADIUS_METER = 25; // Radius toleransi (meter)
 
 // State Aplikasi
 let currentUser = null;
@@ -207,13 +207,15 @@ function initGPS() {
             };
             currentAccuracy = position.coords.accuracy;
 
-            // Mencegah aplikasi Mock Location sederhana (Fake GPS)
-            // Ciri khas: Akurasi terlalu sempurna (misal selalu 1.0 atau 0.0) atau bergerak tapi altitude statis
+            // FIX: Validasi Fake GPS dengan akurasi < 2 meter DIMATIKAN
+            // Alasan: HP masa kini sering mendapat akurasi sangat tinggi secara asli (False Positive)
+            /*
             if (currentAccuracy < 2) {
                  dom.absen.locStatus.innerHTML = '<span class="text-red-600"><i class="fa-solid fa-shield-virus"></i> Terdeteksi aktivitas mencurigakan (Fake GPS). Harap gunakan GPS asli.</span>';
                  dom.absen.btn.disabled = true;
                  return;
             }
+            */
 
             const dist = calculateDistance(KANTOR_LAT, KANTOR_LNG, currentLocation.lat, currentLocation.lng);
             
@@ -303,6 +305,7 @@ function checkReadyToAbsen() {
     // Jika tidak hadir, tidak butuh GPS radius, tapi wajib isi alasan
     if (tipe === 'TIDAK_HADIR') {
         const ket = dom.absen.keterangan.value.trim();
+        // FIX: Sistem bisa langsung klik absen meski lokasi belum terkunci (!currentLocation diabaikan)
         dom.absen.btn.disabled = ket.length === 0 || !stream; 
     } else {
         // Harus ada lokasi, dalam jangkauan (sudah dicek di initGPS), dan kamera nyala
@@ -315,7 +318,7 @@ dom.absen.type.addEventListener('change', (e) => {
     if (e.target.value === 'TIDAK_HADIR') {
         dom.absen.ketContainer.classList.remove('hidden');
         // Reset GPS Warning untuk tipe tidak hadir agar bisa submit
-        dom.absen.locStatus.innerHTML = '<span class="text-blue-600"><i class="fa-solid fa-info-circle"></i> Mode Tidak Hadir. GPS dilonggarkan.</span>';
+        dom.absen.locStatus.innerHTML = '<span class="text-blue-600"><i class="fa-solid fa-info-circle"></i> Mode Tidak Hadir. Validasi Radius GPS dinonaktifkan.</span>';
     } else {
         dom.absen.ketContainer.classList.add('hidden');
         dom.absen.keterangan.value = ''; // Reset
@@ -323,7 +326,7 @@ dom.absen.type.addEventListener('change', (e) => {
         if(currentLocation) {
             const dist = calculateDistance(KANTOR_LAT, KANTOR_LNG, currentLocation.lat, currentLocation.lng);
             if (dist <= MAKSIMAL_RADIUS_METER) {
-                dom.absen.locStatus.innerHTML = `<span class="text-green-700 font-semibold"><i class="fa-solid fa-check-circle"></i> Berada dalam radius.</span>`;
+                dom.absen.locStatus.innerHTML = `<span class="text-blue-700 font-semibold"><i class="fa-solid fa-check-circle"></i> Berada dalam radius.</span>`;
             } else {
                 dom.absen.locStatus.innerHTML = `<span class="text-red-600"><i class="fa-solid fa-ban"></i> Di luar jangkauan!</span>`;
             }
@@ -361,7 +364,7 @@ dom.absen.btn.addEventListener('click', async () => {
         const response = await callBackend('submitAbsensi', [payload]);
         if (response.success) {
             dom.absen.message.textContent = `Berhasil! Waktu: ${response.time}`;
-            dom.absen.message.className = "text-center text-sm font-bold mt-4 text-green-600 bg-green-100 p-2 rounded";
+            dom.absen.message.className = "text-center text-sm font-bold mt-4 text-blue-600 bg-blue-100 p-2 rounded";
             dom.absen.message.classList.remove('hidden');
             
             // Reset state
@@ -391,7 +394,7 @@ dom.absen.btn.addEventListener('click', async () => {
 dom.admin.tabPegawai.addEventListener('click', () => {
     dom.admin.panelPegawai.classList.remove('hidden');
     dom.admin.panelLaporan.classList.add('hidden');
-    dom.admin.tabPegawai.className = "px-4 py-2 bg-green-100 text-green-800 rounded font-semibold text-sm";
+    dom.admin.tabPegawai.className = "px-4 py-2 bg-blue-100 text-blue-800 rounded font-semibold text-sm";
     dom.admin.tabLaporan.className = "px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded font-semibold text-sm";
     loadDataPegawai();
 });
@@ -399,7 +402,7 @@ dom.admin.tabPegawai.addEventListener('click', () => {
 dom.admin.tabLaporan.addEventListener('click', () => {
     dom.admin.panelPegawai.classList.add('hidden');
     dom.admin.panelLaporan.classList.remove('hidden');
-    dom.admin.tabLaporan.className = "px-4 py-2 bg-green-100 text-green-800 rounded font-semibold text-sm";
+    dom.admin.tabLaporan.className = "px-4 py-2 bg-blue-100 text-blue-800 rounded font-semibold text-sm";
     dom.admin.tabPegawai.className = "px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded font-semibold text-sm";
     
     // Set default date today
@@ -578,3 +581,14 @@ dom.admin.btnPrint.addEventListener('click', () => {
     // Trigger browser print dialog
     window.print();
 });
+
+// ==========================================
+// PWA SERVICE WORKER REGISTRATION
+// ==========================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('PWA Service Worker berhasil didaftarkan'))
+            .catch(err => console.error('PWA Service Worker gagal didaftarkan', err));
+    });
+}
