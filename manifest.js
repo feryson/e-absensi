@@ -4,7 +4,7 @@
   "description": "Aplikasi Absensi Pegawai Berbasis GPS dan Kamera",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#eff6ff",
+  "background_color": "#f8fafc",
   "theme_color": "#2563eb",
   "icons": [
     {
