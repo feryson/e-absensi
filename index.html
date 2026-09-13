@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Absensi Pegawai Berbasis GPS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0fdf4; } /* Light green background */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        #video-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        video {
+            width: 100%;
+            transform: scaleX(-1); /* Mirror effect for front camera */
+            border-radius: 0.75rem;
+        }
+        #canvas { display: none; }
+        
+        /* Spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #22c55e; /* Bright green */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col relative">
+
+    <header class="bg-green-600 text-white shadow-md p-4 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-location-dot"></i> E-Absensi
+            </h1>
+            <div id="user-info" class="hidden text-sm font-semibold flex items-center gap-4">
+                <span id="display-name"></span>
+                <button id="btn-logout" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center p-4 max-w-4xl mx-auto w-full">
+        
+        <!-- SECTION: Login -->
+        <div id="login-section" class="glass-panel w-full max-w-md p-8 rounded-2xl shadow-xl transition-all duration-300">
+            <div class="text-center mb-8">
+                <div class="bg-green-100 text-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-fingerprint text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">Selamat Datang</h2>
+                <p class="text-gray-500 text-sm mt-1">Silakan masukkan NIK untuk melanjutkan.</p>
+            </div>
+
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Induk Karyawan (NIK)</label>
+                    <input type="text" id="login-nik" required placeholder="Contoh: 12345678" 
+                           class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition shadow-sm">
+                </div>
+                
+                <button type="submit" id="btn-login" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition flex justify-center items-center">
+                    <span>Masuk</span>
+                </button>
+                <div id="login-error" class="text-red-500 text-sm text-center hidden mt-2"></div>
+            </form>
+        </div>
+
+        <!-- SECTION: Employee Dashboard (Absensi) -->
+        <div id="employee-section" class="hidden w-full max-w-lg glass-panel p-6 rounded-2xl shadow-xl transition-all duration-300">
+            <h3 class="text-xl font-bold text-center mb-4 border-b pb-2">Panel Kehadiran</h3>
+            
+            <!-- GPS Status -->
+            <div class="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 mb-4 flex items-start gap-2 border border-blue-200">
+                <i class="fa-solid fa-satellite-dish mt-1"></i>
+                <div id="location-status">
+                    Mencari lokasi GPS... Pastikan izin lokasi aktif.
+                </div>
+            </div>
+
+            <!-- Camera Area -->
+            <div class="mb-4">
+                <div id="video-container" class="bg-gray-200 flex items-center justify-center h-64 rounded-xl">
+                    <video id="video" autoplay playsinline class="hidden"></video>
+                    <canvas id="canvas"></canvas>
+                    <div id="camera-placeholder" class="text-gray-500 text-center flex flex-col items-center">
+                        <i class="fa-solid fa-camera text-4xl mb-2"></i>
+                        <p class="text-sm">Menyiapkan Kamera Depan...</p>
+                        <button id="btn-start-camera" class="mt-2 bg-gray-600 text-white px-3 py-1 rounded text-xs hidden">Mulai Ulang Kamera</button>
+                    </div>
+                </div>
+                <p class="text-xs text-center text-gray-500 mt-2">*Hanya menggunakan kamera depan. Upload file tidak diizinkan.</p>
+            </div>
+
+            <!-- Attendance Form -->
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipe Absen</label>
+                    <select id="absen-type" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-green-500 focus:border-green-500">
+                        <option value="MASUK">Absen Masuk</option>
+                        <option value="KELUAR">Absen Keluar</option>
+                        <option value="TIDAK_HADIR">Keterangan Tidak Hadir (Sakit/Izin/Cuti)</option>
+                    </select>
+                </div>
+
+                <div id="keterangan-container" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Alasan / Keterangan</label>
+                    <textarea id="absen-keterangan" rows="2" placeholder="Tulis alasan jika tidak hadir..." class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-green-500 focus:border-green-500"></textarea>
+                </div>
+
+                <button id="btn-absen" disabled class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center">
+                    <i class="fa-solid fa-camera mr-2"></i> Ambil Foto & Absen
+                </button>
+            </div>
+            
+            <div id="absen-message" class="text-center text-sm font-semibold mt-4 hidden"></div>
+        </div>
+
+        <!-- SECTION: Admin Dashboard -->
+        <div id="admin-section" class="hidden w-full max-w-4xl bg-white p-6 rounded-2xl shadow-xl transition-all duration-300">
+            <div class="flex justify-between items-center mb-6 border-b pb-3">
+                <h3 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-user-shield text-green-600"></i> Panel Superadmin</h3>
+                <div class="flex gap-2">
+                    <button id="tab-pegawai" class="px-4 py-2 bg-green-100 text-green-800 rounded font-semibold text-sm">Data Pegawai</button>
+                    <button id="tab-laporan" class="px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded font-semibold text-sm">Laporan Absensi</button>
+                </div>
+            </div>
+
+            <!-- Tab: Data Pegawai -->
+            <div id="panel-pegawai">
+                <div class="flex justify-between mb-4">
+                    <h4 class="font-semibold text-lg">Kelola Pegawai</h4>
+                    <button id="btn-tambah-pegawai" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm shadow"><i class="fa-solid fa-plus"></i> Tambah Pegawai</button>
+                </div>
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3">NIK</th>
+                                <th class="px-4 py-3">Nama Pegawai</th>
+                                <th class="px-4 py-3">Role</th>
+                                <th class="px-4 py-3 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-pegawai-body">
+                            <!-- Data populated via JS -->
+                            <tr><td colspan="4" class="px-4 py-4 text-center">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab: Laporan -->
+            <div id="panel-laporan" class="hidden">
+                <div class="flex flex-col md:flex-row justify-between mb-4 gap-4 items-end">
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Filter Tanggal</label>
+                            <input type="date" id="filter-date" class="border rounded px-2 py-1 text-sm">
+                        </div>
+                        <div class="flex items-end">
+                            <button id="btn-filter" class="bg-blue-500 text-white px-3 py-1 rounded text-sm shadow h-[30px]">Tampilkan</button>
+                        </div>
+                    </div>
+                    <!-- Tombol Cetak PDF -->
+                    <button id="btn-print" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded text-sm shadow flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Cetak Laporan PDF
+                    </button>
+                </div>
+                <div class="overflow-x-auto border rounded-lg" id="print-area">
+                    <h2 class="text-center font-bold text-xl mb-2 hidden print-show">Laporan Absensi Pegawai</h2>
+                    <p class="text-center text-sm mb-4 hidden print-show" id="print-date-info"></p>
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3">Waktu</th>
+                                <th class="px-4 py-3">NIK</th>
+                                <th class="px-4 py-3">Nama</th>
+                                <th class="px-4 py-3">Tipe</th>
+                                <th class="px-4 py-3">Jarak (m)</th>
+                                <th class="px-4 py-3">Keterangan</th>
+                                <th class="px-4 py-3">Foto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-laporan-body">
+                            <!-- Data populated via JS -->
+                            <tr><td colspan="7" class="px-4 py-4 text-center">Pilih tanggal untuk melihat laporan.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+    </main>
+
+    <!-- Modal Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-[100] hidden flex flex-col items-center justify-center">
+        <div class="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center">
+            <div class="loader mb-3"></div>
+            <p id="loading-text" class="text-gray-700 font-semibold text-sm">Memproses permintaan...</p>
+        </div>
+    </div>
+
+    <!-- Modal Form Pegawai -->
+    <div id="modal-pegawai" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-[90] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative">
+            <button id="btn-close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-red-500">
+                <i class="fa-solid fa-times text-xl"></i>
+            </button>
+            <h3 class="text-lg font-bold mb-4 border-b pb-2" id="modal-title">Tambah Pegawai</h3>
+            <form id="form-pegawai" class="space-y-4">
+                <input type="hidden" id="form-mode" value="add">
+                <input type="hidden" id="original-nik" value="">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">NIK</label>
+                    <input type="text" id="pegawai-nik" required class="w-full px-3 py-2 border rounded-lg focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                    <input type="text" id="pegawai-nama" required class="w-full px-3 py-2 border rounded-lg focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Role Akses</label>
+                    <select id="pegawai-role" class="w-full px-3 py-2 border rounded-lg focus:ring-green-500">
+                        <option value="pegawai">Pegawai Biasa</option>
+                        <option value="superadmin">Superadmin</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg mt-2">Simpan Data</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+    
+    <!-- CSS for Printing -->
+    <style>
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .print-show { display: block !important; }
+            #admin-section { box-shadow: none; padding: 0; }
+        }
+    </style>
+</body>
+</html>
