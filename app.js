@@ -15,21 +15,15 @@ const dom = {
     secLogin: document.getElementById('login-section'),
     secEmployee: document.getElementById('employee-section'),
     secAdmin: document.getElementById('admin-section'),
-    
-    // Login Elements
     formLogin: document.getElementById('login-form'),
     inpNik: document.getElementById('login-nik'),
     btnLogin: document.getElementById('btn-login'),
     errLogin: document.getElementById('login-error'),
-    
-    // Header Elements
     userInfo: document.getElementById('user-info'),
     dispName: document.getElementById('display-name'),
     dispRole: document.getElementById('display-role'),
     btnLogout: document.getElementById('btn-logout'),
     btnInstallPwa: document.getElementById('btn-install-pwa'),
-    
-    // Absensi Elements
     selType: document.getElementById('absen-type'),
     conKet: document.getElementById('keterangan-container'),
     inpKet: document.getElementById('absen-keterangan'),
@@ -38,28 +32,20 @@ const dom = {
     statLoc: document.getElementById('location-status'),
     bannerLoc: document.getElementById('location-banner'),
     iconLocWrapper: document.getElementById('location-icon-wrapper'),
-    
-    // Camera Elements
     video: document.getElementById('video'),
     canvas: document.getElementById('canvas'),
     camPlaceholder: document.getElementById('camera-placeholder'),
     btnStartCam: document.getElementById('btn-start-camera'),
     badgeLive: document.getElementById('live-badge'),
-    
-    // Modals & Overlay
     overlayLoad: document.getElementById('loading-overlay'),
-    textLoad: document.getElementById('loading-text'),
-    modalInstall: document.getElementById('modal-install'),
-    closeInstall: document.getElementById('btn-close-install-modal'),
-    instPwa: document.getElementById('install-instructions')
+    textLoad: document.getElementById('loading-text')
 };
 
 // 1. Inisialisasi Service Worker & Session
 window.addEventListener('load', () => {
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Registration error:', err));
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
     }
-
     const savedSession = sessionStorage.getItem('e_absensi_session');
     if (savedSession) {
         currentUser = JSON.parse(savedSession);
@@ -67,46 +53,27 @@ window.addEventListener('load', () => {
     }
 });
 
-// 2. Event PWA Install Prompt
+// PWA Install Prompt
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    dom.btnInstallPwa.classList.remove('hidden');
 });
 
 dom.btnInstallPwa.addEventListener('click', async () => {
     if (deferredPrompt) {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            dom.btnInstallPwa.classList.add('hidden');
-        }
-        deferredPrompt = null;
+        if (outcome === 'accepted') deferredPrompt = null;
     } else {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        let html = isIOS 
-            ? `<ol class="list-decimal pl-4 space-y-2">
-                <li>Ketuk ikon bagikan <i class="fa-solid fa-arrow-up-from-bracket mx-1"></i> di Safari.</li>
-                <li>Pilih <b class="text-blue-600">"Tambah ke Layar Utama"</b>.</li>
-                <li>Ketuk <b>Tambah</b> di sudut kanan atas.</li>
-               </ol>`
-            : `<p>Buka menu titik tiga di browser Anda, lalu pilih <b>Tambahkan ke Layar Utama</b> atau <b>Install Aplikasi</b>.</p>`;
-        
-        dom.instPwa.innerHTML = html;
-        dom.modalInstall.classList.remove('hidden');
+        alert("Aplikasi bisa diinstal via menu browser (Tambahkan ke Layar Utama/Add to Home Screen).");
     }
 });
 
-dom.closeInstall.addEventListener('click', () => dom.modalInstall.classList.add('hidden'));
-
 // Loader Helper
 function toggleLoading(show, message = 'Memproses...') {
-    if (show) {
-        dom.textLoad.textContent = message;
-        dom.overlayLoad.classList.remove('hidden');
-    } else {
-        dom.overlayLoad.classList.add('hidden');
-    }
+    dom.textLoad.textContent = message;
+    dom.overlayLoad.classList.toggle('hidden', !show);
+    dom.overlayLoad.classList.toggle('flex', show);
 }
 
 // Rumus Jarak Haversine
@@ -120,27 +87,19 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))));
 }
 
-// Bridge API Asinkron Fast-Response
+// Bridge API Cepat
 async function fetchBackend(action, params = []) {
     return new Promise((resolve, reject) => {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                [action].apply(null, params);
-        } else if (URL_APPS_SCRIPT) {
-            const payloadData = { action: action, parameters: params };
-            fetch(URL_APPS_SCRIPT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ payload: JSON.stringify(payloadData) })
-            })
-            .then(res => res.json())
-            .then(resolve)
-            .catch(() => reject(new Error("Gagal terhubung ke database. Periksa koneksi internet.")));
-        } else {
-            reject(new Error("URL Apps Script belum diisi di app.js!"));
-        }
+        if (!URL_APPS_SCRIPT) return reject(new Error("URL Apps Script belum diisi!"));
+        const payloadData = { action: action, parameters: params };
+        fetch(URL_APPS_SCRIPT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ payload: JSON.stringify(payloadData) })
+        })
+        .then(res => res.json())
+        .then(resolve)
+        .catch(() => reject(new Error("Koneksi gagal. Cek internet Anda.")));
     });
 }
 
@@ -152,7 +111,7 @@ dom.formLogin.addEventListener('submit', async (e) => {
 
     dom.errLogin.classList.add('hidden');
     dom.btnLogin.disabled = true;
-    toggleLoading(true, 'Memverifikasi NIK...');
+    toggleLoading(true, 'Memverifikasi...');
 
     try {
         const response = await fetchBackend('login', [inputNik]);
@@ -161,7 +120,7 @@ dom.formLogin.addEventListener('submit', async (e) => {
             sessionStorage.setItem('e_absensi_session', JSON.stringify(currentUser));
             renderDashboardBerdasarkanRole();
         } else {
-            dom.errLogin.textContent = response.message || "NIK Tidak Ditemukan!";
+            dom.errLogin.textContent = response.message;
             dom.errLogin.classList.remove('hidden');
         }
     } catch (err) {
@@ -180,31 +139,60 @@ function renderDashboardBerdasarkanRole() {
     dom.userInfo.classList.add('flex');
     dom.secLogin.classList.add('hidden');
     
-    if (currentUser.role.toUpperCase() === 'SUPERADMIN') {
+    if (currentUser.role === 'SUPERADMIN') {
         dom.secAdmin.classList.remove('hidden');
         loadDataPegawaiAdmin();
     } else {
         dom.secEmployee.classList.remove('hidden');
         inisialisasiGPS();
         inisialisasiKamera();
+        cekStatusHariIni(); // <--- LOGIKA BARU PEMANGGILAN STATUS
     }
+}
+
+// --- LOGIKA BARU: MENGATUR DROPDOWN BERDASARKAN STATUS HARI INI ---
+async function cekStatusHariIni() {
+    toggleLoading(true, 'Mengecek status absen...');
+    try {
+        const res = await fetchBackend('checkStatus', [currentUser.nik]);
+        if(res.success) {
+            aturDropdownBerdasarkanStatus(res.data);
+        }
+    } catch(e) {
+        console.error(e);
+        dom.selType.innerHTML = '<option value="">⚠️ Gagal memuat status absen</option>';
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+function aturDropdownBerdasarkanStatus(status) {
+    dom.selType.innerHTML = '';
+    
+    if (status.izin) {
+        dom.selType.innerHTML = '<option value="">✅ Anda sedang Izin/Cuti hari ini.</option>';
+        dom.selType.disabled = true;
+        dom.btnAbsen.disabled = true;
+    } else if (status.keluar) {
+        dom.selType.innerHTML = '<option value="">✅ Anda sudah selesai absen pulang hari ini.</option>';
+        dom.selType.disabled = true;
+        dom.btnAbsen.disabled = true;
+    } else if (status.masuk) {
+        dom.selType.innerHTML = '<option value="KELUAR">🏃 Absen Pulang (Clock Out)</option>';
+        dom.selType.disabled = false;
+    } else {
+        dom.selType.innerHTML = `
+            <option value="MASUK">✅ Absen Masuk (Clock In)</option>
+            <option value="TIDAK_HADIR">📝 Pengajuan Izin / Cuti / Sakit</option>
+        `;
+        dom.selType.disabled = false;
+    }
+    validasiStatusAbsensi(); // Cek ulang form & tombol
 }
 
 dom.btnLogout.addEventListener('click', () => {
     sessionStorage.removeItem('e_absensi_session');
-    currentUser = null;
-    currentLocation = null;
-    
-    if (stream) stream.getTracks().forEach(track => track.stop());
-    dom.video.classList.add('hidden');
-    dom.badgeLive.classList.add('hidden');
-    
-    dom.userInfo.classList.add('hidden');
-    dom.secEmployee.classList.add('hidden');
-    dom.secAdmin.classList.add('hidden');
-    dom.secLogin.classList.remove('hidden');
-    dom.inpNik.value = '';
-    dom.btnAbsen.disabled = true;
+    location.reload(); // Hard refresh untuk membersihkan semua memori UI
 });
 
 // Jam Digital Live
@@ -216,19 +204,16 @@ setInterval(() => {
 // Inisialisasi GPS Realtime
 function inisialisasiGPS() {
     if (!navigator.geolocation) {
-        ubahStatusLokasi('error', 'Browser/HP Anda tidak mendukung fitur lokasi (GPS).');
+        ubahStatusLokasi('error', 'Browser Anda tidak mendukung lokasi.');
         return;
     }
-
     navigator.geolocation.watchPosition(
         (pos) => {
             currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             validasiStatusAbsensi();
         },
-        (err) => {
-            ubahStatusLokasi('error', 'Izin GPS ditolak atau sinyal lemah.');
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+        (err) => ubahStatusLokasi('error', 'Izin GPS ditolak atau sinyal lemah.'),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
     );
 }
 
@@ -243,9 +228,9 @@ function ubahStatusLokasi(tipe, pesan) {
         dom.iconLocWrapper.className = "p-2 rounded-xl bg-rose-100 text-rose-600 shrink-0";
         dom.statLoc.className = "text-rose-700 font-bold";
     } else {
-        dom.bannerLoc.className = "bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-xs flex items-start gap-3";
-        dom.iconLocWrapper.className = "p-2 rounded-xl bg-amber-100 text-amber-600 shrink-0";
-        dom.statLoc.className = "text-amber-700 font-medium";
+        dom.bannerLoc.className = "bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6 text-xs flex items-start gap-3";
+        dom.iconLocWrapper.className = "p-2 rounded-xl bg-blue-100 text-blue-600 shrink-0";
+        dom.statLoc.className = "text-blue-700 font-medium";
     }
 }
 
@@ -257,9 +242,7 @@ async function inisialisasiKamera() {
     dom.badgeLive.classList.add('hidden');
 
     try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user", width: { ideal: 640 } }
-        });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 } } });
         dom.video.srcObject = stream;
         dom.video.onloadedmetadata = () => {
             dom.camPlaceholder.classList.add('hidden');
@@ -269,7 +252,7 @@ async function inisialisasiKamera() {
             validasiStatusAbsensi();
         };
     } catch (e) {
-        dom.camPlaceholder.innerHTML = '<span class="text-rose-500 font-bold text-xs"><i class="fa-solid fa-camera-slash text-2xl mb-2 block"></i>Izin Kamera Ditolak / Tidak Tersedia</span>';
+        dom.camPlaceholder.innerHTML = '<span class="text-rose-500 font-bold text-xs"><i class="fa-solid fa-camera-slash mb-2 block"></i>Kamera Ditolak</span>';
         dom.btnStartCam.classList.remove('hidden');
     }
 }
@@ -280,28 +263,28 @@ function validasiStatusAbsensi() {
     const tipeAbsen = dom.selType.value;
     const isKameraAktif = stream !== null && dom.video.srcObject !== null;
 
+    if (!tipeAbsen) {
+        dom.btnAbsen.disabled = true;
+        dom.conKet.classList.add('hidden');
+        return;
+    }
+
     if (tipeAbsen === 'TIDAK_HADIR') {
         dom.conKet.classList.remove('hidden');
-        ubahStatusLokasi('warning', 'Mode Izin/Cuti: Lokasi GPS diabaikan, namun WAJIB selfie & isi keterangan.');
-        
-        const keteranganVal = dom.inpKet.value.trim();
-        dom.btnAbsen.disabled = !(keteranganVal.length > 0 && isKameraAktif);
+        ubahStatusLokasi('success', 'Mode Izin: GPS dilewati. Wajib isi keterangan & foto.');
+        dom.btnAbsen.disabled = !(dom.inpKet.value.trim().length > 0 && isKameraAktif);
     } else {
         dom.conKet.classList.add('hidden');
-        
-        if (!currentLocation) {
-            dom.btnAbsen.disabled = true;
-            return;
-        }
+        if (!currentLocation) { dom.btnAbsen.disabled = true; return; }
 
         const jarak = calculateDistance(KANTOR_LAT, KANTOR_LNG, currentLocation.lat, currentLocation.lng);
         let gpsValid = false;
 
         if (jarak <= MAKSIMAL_RADIUS_METER) {
-            ubahStatusLokasi('success', `Anda di area kantor. (Jarak: ${jarak}m dari lokasi pusat)`);
+            ubahStatusLokasi('success', `Anda di area kantor (Jarak: ${jarak}m).`);
             gpsValid = true;
         } else {
-            ubahStatusLokasi('error', `Di luar area kantor. Jarak: ${jarak}m (Maksimal: ${MAKSIMAL_RADIUS_METER}m)`);
+            ubahStatusLokasi('error', `Di luar area. Jarak: ${jarak}m (Maksimal: ${MAKSIMAL_RADIUS_METER}m)`);
             gpsValid = false;
         }
 
@@ -312,7 +295,7 @@ function validasiStatusAbsensi() {
 dom.selType.addEventListener('change', validasiStatusAbsensi);
 dom.inpKet.addEventListener('input', validasiStatusAbsensi);
 
-// Kompresi Foto Selfie Super Cepat (Width 400px, JPEG 50%) -> Upload Ringan & Cepat!
+// Kompresi Foto Ekstra Ringan -> Cepat
 function ambilFotoSelfie() {
     if (!stream) return "";
     try {
@@ -322,45 +305,40 @@ function ambilFotoSelfie() {
         ctx.translate(dom.canvas.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(dom.video, 0, 0, dom.canvas.width, dom.canvas.height);
-        return dom.canvas.toDataURL('image/jpeg', 0.5); 
-    } catch(e) {
-        return "";
-    }
+        return dom.canvas.toDataURL('image/jpeg', 0.4); 
+    } catch(e) { return ""; }
 }
 
 // Eksekusi Absensi
 dom.btnAbsen.addEventListener('click', async () => {
     dom.btnAbsen.disabled = true;
-    
-    const tipeAbsen = dom.selType.value;
-    const base64Foto = ambilFotoSelfie();
-    
     const payloadData = {
         nik: currentUser.nik,
         nama: currentUser.nama,
-        type: tipeAbsen,
+        type: dom.selType.value,
         lat: currentLocation ? currentLocation.lat : 0,
         lng: currentLocation ? currentLocation.lng : 0,
         keterangan: dom.inpKet.value.trim(),
-        photo: base64Foto
+        photo: ambilFotoSelfie()
     };
 
-    toggleLoading(true, 'Menyimpan kehadiran...');
+    toggleLoading(true, 'Mengirim data ke server...');
     dom.msgAbsen.classList.add('hidden');
 
     try {
         const response = await fetchBackend('submitAbsensi', [payloadData]);
         if (response.success) {
-            dom.msgAbsen.textContent = `✅ Absensi Berhasil Disimpan! (${response.time})`;
-            dom.msgAbsen.className = "text-center text-xs font-bold mt-4 p-4 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 animate-fade-in";
+            dom.msgAbsen.textContent = `✅ Berhasil Disimpan! (${response.time})`;
+            dom.msgAbsen.className = "text-center text-xs font-bold mt-4 p-4 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200";
             dom.msgAbsen.classList.remove('hidden');
             dom.inpKet.value = '';
-        } else {
-            throw new Error(response.message);
-        }
+            
+            // Re-check status hari ini agar opsi berubah secara instan
+            cekStatusHariIni(); 
+        } else { throw new Error(response.message); }
     } catch (err) {
         dom.msgAbsen.textContent = `⚠️ ${err.message}`;
-        dom.msgAbsen.className = "text-center text-xs font-bold mt-4 p-4 rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 animate-fade-in";
+        dom.msgAbsen.className = "text-center text-xs font-bold mt-4 p-4 rounded-2xl bg-rose-50 text-rose-700 border border-rose-200";
         dom.msgAbsen.classList.remove('hidden');
     } finally {
         toggleLoading(false);
@@ -368,7 +346,7 @@ dom.btnAbsen.addEventListener('click', async () => {
     }
 });
 
-// ADMIN NAVIGASI TAB
+// ADMIN NAVIGASI TAB (Sama dengan Versi Sebelumnya, disingkat untuk fokus UI)
 const tabPegawai = document.getElementById('tab-pegawai');
 const tabLaporan = document.getElementById('tab-laporan');
 const panelPegawai = document.getElementById('panel-pegawai');
@@ -387,167 +365,55 @@ tabLaporan.addEventListener('click', () => {
     panelLaporan.classList.remove('hidden');
     tabLaporan.className = "flex-1 md:flex-none px-5 py-2.5 bg-white text-blue-600 rounded-xl font-bold text-xs shadow-sm transition";
     tabPegawai.className = "flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-xl font-bold text-xs transition";
-    
-    if(!document.getElementById('filter-date').value) {
-        document.getElementById('filter-date').value = new Date().toISOString().split('T')[0];
-    }
-    loadLaporanAdmin();
 });
 
 async function loadDataPegawaiAdmin() {
     const tbody = document.getElementById('table-pegawai-body');
-    tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Memuat data karyawan...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Memuat...</td></tr>';
     try {
         const data = await fetchBackend('getPegawai', []);
         tbody.innerHTML = '';
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Belum ada karyawan terdaftar.</td></tr>';
-            return;
-        }
         data.forEach(p => {
             const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
-            
-            const badgeRole = p.role.toUpperCase() === 'SUPERADMIN' 
-                ? '<span class="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-lg text-[10px] font-extrabold border border-amber-200">SUPERADMIN</span>' 
-                : '<span class="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-extrabold border border-blue-200">PEGAWAI</span>';
-                
             tr.innerHTML = `
-                <td class="px-5 py-3.5 font-bold text-slate-800">${p.nik}</td>
-                <td class="px-5 py-3.5 text-slate-700 font-semibold">${p.nama}</td>
-                <td class="px-5 py-3.5">${badgeRole}</td>
-                <td class="px-5 py-3.5 text-right">
-                    <button onclick="editPegawai('${p.nik}', '${p.nama}', '${p.role}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition mr-1" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
-                    <button onclick="hapusPegawai('${p.nik}')" class="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition ${p.nik === currentUser.nik ? 'hidden' : ''}" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>
-                </td>
+                <td class="px-5 py-3.5 font-bold">${p.nik}</td>
+                <td class="px-5 py-3.5">${p.nama}</td>
+                <td class="px-5 py-3.5"><span class="px-2 bg-blue-100 text-blue-700 rounded">${p.role}</span></td>
+                <td class="px-5 py-3.5 text-right"><button onclick="hapusPegawai('${p.nik}')" class="text-rose-500">Hapus</button></td>
             `;
             tbody.appendChild(tr);
         });
-    } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-rose-500 font-bold">Gagal memuat database.</td></tr>';
-    }
+    } catch (e) { tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-rose-500 font-bold">Gagal memuat</td></tr>'; }
 }
 
-// Modal Pegawai
-const modalPegawai = document.getElementById('modal-pegawai');
-document.getElementById('btn-tambah-pegawai').addEventListener('click', () => {
-    document.getElementById('form-mode').value = 'add';
-    document.getElementById('modal-title').textContent = 'Tambah Karyawan Baru';
-    document.getElementById('form-pegawai').reset();
-    modalPegawai.classList.remove('hidden');
-});
-document.getElementById('btn-close-modal').addEventListener('click', () => modalPegawai.classList.add('hidden'));
-
-window.editPegawai = function(nik, nama, role) {
-    document.getElementById('form-mode').value = 'edit';
-    document.getElementById('original-nik').value = nik;
-    document.getElementById('modal-title').textContent = 'Edit Data Karyawan';
-    document.getElementById('pegawai-nik').value = nik;
-    document.getElementById('pegawai-nama').value = nama;
-    document.getElementById('pegawai-role').value = role.toUpperCase();
-    modalPegawai.classList.remove('hidden');
-};
-
 window.hapusPegawai = async function(nik) {
-    if (confirm(`Yakin ingin menghapus NIK ${nik}?`)) {
-        toggleLoading(true, 'Menghapus data...');
-        try {
-            await fetchBackend('deletePegawai', [nik]);
-            loadDataPegawaiAdmin();
-        } catch(e) { alert('Gagal menghapus data.'); }
-        finally { toggleLoading(false); }
+    if (confirm(`Hapus NIK ${nik}?`)) {
+        toggleLoading(true, 'Menghapus...');
+        await fetchBackend('deletePegawai', [nik]);
+        toggleLoading(false);
+        loadDataPegawaiAdmin();
     }
 };
 
-document.getElementById('form-pegawai').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const mode = document.getElementById('form-mode').value;
-    const oldNik = document.getElementById('original-nik').value;
-    const payload = {
-        nik: document.getElementById('pegawai-nik').value.trim(),
-        nama: document.getElementById('pegawai-nama').value.trim(),
-        role: document.getElementById('pegawai-role').value
-    };
-
-    modalPegawai.classList.add('hidden');
-    toggleLoading(true, 'Menyimpan data...');
-
-    try {
-        const res = mode === 'add' ? await fetchBackend('addPegawai', [payload]) : await fetchBackend('updatePegawai', [oldNik, payload]);
-        if (res.success) loadDataPegawaiAdmin();
-        else alert(res.message);
-    } catch (e) { alert("Terjadi kesalahan server."); }
-    finally { toggleLoading(false); }
-});
-
-// LAPORAN PRESENSI + STATISTIK RINGKAS
-async function loadLaporanAdmin() {
+document.getElementById('btn-filter').addEventListener('click', async () => {
     const tgl = document.getElementById('filter-date').value;
     if (!tgl) return;
-    
     const tbody = document.getElementById('table-laporan-body');
-    tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Membuat laporan...</td></tr>';
-    
+    tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">Memuat laporan...</td></tr>';
     try {
         const data = await fetchBackend('getLaporan', [tgl]);
         tbody.innerHTML = '';
-        
-        let cMasuk = 0, cKeluar = 0, cIzin = 0;
-
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-slate-400 font-medium">Tidak ada data kehadiran pada tanggal ini.</td></tr>';
-        } else {
-            data.forEach(d => {
-                if (d.tipe === "MASUK") cMasuk++;
-                else if (d.tipe === "KELUAR") cKeluar++;
-                else if (d.tipe === "TIDAK_HADIR") cIzin++;
-
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
-                
-                let badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
-                let labelStatus = "✅ MASUK";
-                if(d.tipe === "KELUAR") {
-                    badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
-                    labelStatus = "🏃 PULANG";
-                } else if(d.tipe === "TIDAK_HADIR") {
-                    badgeClass = "bg-purple-50 text-purple-700 border-purple-200";
-                    labelStatus = "📝 IZIN / CUTI";
-                }
-
-                tr.innerHTML = `
-                    <td class="px-5 py-3.5 font-bold text-slate-800">${d.waktu}</td>
-                    <td class="px-5 py-3.5 font-bold text-blue-600">${d.nik}</td>
-                    <td class="px-5 py-3.5 font-semibold text-slate-700">${d.nama}</td>
-                    <td class="px-5 py-3.5"><span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold border ${badgeClass}">${labelStatus}</span></td>
-                    <td class="px-5 py-3.5 text-slate-600 font-medium">${d.jarak ? d.jarak + ' m' : '-'}</td>
-                    <td class="px-5 py-3.5 text-slate-500 max-w-[180px] truncate" title="${d.keterangan || '-'}">${d.keterangan || '-'}</td>
-                    <td class="px-5 py-3.5">${d.fotoUrl ? `<a href="${d.fotoUrl}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold transition border border-slate-200"><i class="fa-solid fa-image"></i> Lihat Foto</a>` : '<span class="text-slate-400">-</span>'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Update Counter Statistik Cards
-        document.getElementById('stat-masuk').textContent = cMasuk;
-        document.getElementById('stat-keluar').textContent = cKeluar;
-        document.getElementById('stat-izin').textContent = cIzin;
-        document.getElementById('stat-total').textContent = data.length;
-
-    } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-rose-500 font-bold">Gagal memuat laporan presensi.</td></tr>';
-    }
-}
-
-document.getElementById('btn-filter').addEventListener('click', loadLaporanAdmin);
-
-document.getElementById('btn-print').addEventListener('click', () => {
-    const tgl = document.getElementById('filter-date').value;
-    if(!tgl) { alert("Pilih tanggal laporan lebih dahulu."); return; }
-    
-    // Tampilkan Info Tanggal Cetak
-    const dateObj = new Date(tgl);
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('print-date-info').textContent = `Tanggal Laporan: ${dateObj.toLocaleDateString('id-ID', options)}`;
-    window.print();
+        data.forEach(d => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="px-5 py-3.5 font-bold">${d.waktu}</td>
+                <td class="px-5 py-3.5">${d.nik}</td>
+                <td class="px-5 py-3.5">${d.nama}</td>
+                <td class="px-5 py-3.5 font-bold text-blue-600">${d.tipe}</td>
+                <td class="px-5 py-3.5">${d.jarak ? d.jarak + 'm' : '-'}</td>
+                <td class="px-5 py-3.5">${d.keterangan || '-'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (e) { tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-rose-500">Error</td></tr>'; }
 });
