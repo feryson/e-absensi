@@ -3,344 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>E-Absensi Pegawai Modern</title>
+    <title>Portal E-Absensi</title>
     
-    <!-- PWA Setup -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3b82f6">
+    <meta name="theme-color" content="#2563eb">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2784/2784459.png">
     
-    <!-- Tailwind & FontAwesome -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         /* MENCEGAH PULL-TO-REFRESH DI HP */
-        html, body { 
-            overscroll-behavior-y: none;
-            touch-action: pan-y; /* Mencegah bounce standar browser */
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-        }
-        
+        html, body { overscroll-behavior-y: none; touch-action: pan-y; font-family: 'Plus Jakarta Sans', sans-serif; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-    </style>
-</head>
-<body class="bg-[#f8fafc] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/50 via-slate-50 to-slate-100 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-blue-200">
-
-    <!-- HEADER NAVIGATION -->
-    <header class="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-                    <i class="fa-solid fa-location-dot text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="font-extrabold text-lg text-slate-800 leading-tight tracking-tight">Geo<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Absen</span></h1>
-                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portal Karyawan</span>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2 sm:gap-3">
-                <button id="btn-install-pwa" class="flex items-center gap-2 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-[11px] sm:text-xs font-bold px-3 sm:px-4 py-2 rounded-xl transition shadow-md shadow-blue-500/20 active:scale-95 border border-blue-600/50">
-                    <i class="fa-solid fa-download"></i> <span class="hidden sm:inline">Unduh App</span><span class="sm:hidden">Unduh</span>
-                </button>
-
-                <div id="user-info" class="hidden items-center gap-3 bg-white/60 backdrop-blur-md p-1.5 pl-4 rounded-full border border-slate-200 shadow-sm">
-                    <div class="text-right hidden sm:block">
-                        <div id="display-name" class="text-xs font-bold text-slate-800 leading-tight truncate max-w-[120px]"></div>
-                        <div id="display-role" class="text-[10px] text-indigo-600 font-extrabold uppercase tracking-wider"></div>
-                    </div>
-                    <button id="btn-logout" class="bg-white hover:bg-rose-50 hover:text-rose-600 text-slate-400 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition border border-slate-200 shrink-0" title="Keluar">
-                        <i class="fa-solid fa-power-off text-xs"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- MAIN CONTENT AREA -->
-    <main class="flex-grow flex items-center justify-center p-4 sm:p-6 w-full max-w-6xl mx-auto">
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        <!-- FORM LOGIN -->
-        <section id="login-section" class="w-full max-w-md bg-white p-8 rounded-[2rem] shadow-2xl shadow-blue-900/5 border border-slate-100 ring-1 ring-slate-900/5 animate-fade-in">
-            <div class="text-center mb-8">
-                <div class="inline-flex p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 mb-4 shadow-inner border border-blue-100/50">
-                    <i class="fa-solid fa-fingerprint text-4xl"></i>
-                </div>
-                <h2 class="text-2xl font-black text-slate-800 tracking-tight">Selamat Datang</h2>
-                <p class="text-slate-500 text-xs mt-2 font-medium">Autentikasi NIK Anda untuk masuk sistem.</p>
-            </div>
-
-            <form id="login-form" class="space-y-5">
-                <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Nomor Induk Karyawan</label>
-                    <div class="relative group">
-                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-blue-500 transition-colors">
-                            <i class="fa-regular fa-id-card"></i>
-                        </span>
-                        <input type="text" id="login-nik" required placeholder="Contoh: 1001" 
-                               class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm font-semibold outline-none shadow-inner">
-                    </div>
-                </div>
-                
-                <button type="submit" id="btn-login" class="w-full bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:scale-[0.98] text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-600/25 transition-all flex justify-center items-center gap-2 text-sm border border-blue-700/50">
-                    <span>Masuk Aplikasi</span>
-                    <i class="fa-solid fa-arrow-right text-xs"></i>
-                </button>
-                
-                <div id="login-error" class="text-rose-500 text-xs font-semibold text-center hidden p-3 bg-rose-50 rounded-xl border border-rose-100"></div>
-            </form>
-        </section>
-
-        <!-- DASHBOARD PEGAWAI (ABSENSI) -->
-        <section id="employee-section" class="hidden w-full max-w-lg bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 animate-fade-in">
-            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-                <div>
-                    <h3 class="text-lg font-extrabold text-slate-800">Presensi Kehadiran</h3>
-                    <p class="text-xs text-slate-500 font-medium">Wajib masuk sebelum pulang.</p>
-                </div>
-                <div id="live-clock" class="text-xs font-extrabold bg-blue-50 text-blue-700 px-3 py-1.5 rounded-xl border border-blue-200 tracking-wider">
-                    00:00:00
-                </div>
-            </div>
-            
-            <!-- Banner Status GPS -->
-            <div id="location-banner" class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 text-xs flex items-start gap-3 transition-colors">
-                <div id="location-icon-wrapper" class="p-2 rounded-xl bg-slate-200 text-slate-600 shrink-0">
-                    <i class="fa-solid fa-satellite-dish text-base animate-pulse"></i>
-                </div>
-                <div class="flex-grow pt-0.5">
-                    <span class="font-bold block mb-0.5 text-slate-800">Status Titik GPS</span>
-                    <span id="location-status" class="text-slate-600 font-medium leading-relaxed">Mencari koordinat...</span>
-                </div>
-            </div>
-
-            <!-- Preview Kamera Selfie -->
-            <div id="camera-wrapper" class="mb-6">
-                <div class="relative w-full h-56 sm:h-64 rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center shadow-inner">
-                    <video id="video" autoplay playsinline class="w-full h-full object-cover hidden transform scale-x-[-1]"></video>
-                    <canvas id="canvas" class="hidden"></canvas>
-                    
-                    <div id="camera-placeholder" class="text-slate-400 text-center flex flex-col items-center p-6">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center mb-3 text-slate-500">
-                            <i class="fa-solid fa-camera text-xl"></i>
-                        </div>
-                        <p class="text-xs font-bold text-slate-300">Menyiapkan Kamera...</p>
-                        <button id="btn-start-camera" class="mt-3 bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition hidden">Coba Aktifkan Ulang</button>
-                    </div>
-
-                    <div id="live-badge" class="hidden absolute top-3 left-3 bg-slate-900/70 backdrop-blur-md text-white px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wider items-center gap-1.5 border border-white/20">
-                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> LIVE CAM
-                    </div>
-                </div>
-            </div>
-
-            <!-- Form Absensi -->
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Pilihan Absensi Tersedia</label>
-                    <div class="relative">
-                        <select id="absen-type" class="w-full pl-4 pr-10 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer transition text-xs sm:text-sm">
-                            <option value="">Memeriksa status absen hari ini...</option>
-                        </select>
-                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
-                    </div>
-                </div>
-
-                <div id="keterangan-container" class="hidden animate-fade-in">
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Keterangan Izin/Cuti <span class="text-rose-500">*Wajib</span></label>
-                    <textarea id="absen-keterangan" rows="2" placeholder="Tuliskan alasan izin/cuti secara singkat..." class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-xs sm:text-sm font-medium"></textarea>
-                </div>
-
-                <button id="btn-absen" disabled class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-4 px-4 rounded-2xl shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed flex justify-center items-center gap-2 text-sm mt-2">
-                    <i class="fa-solid fa-paper-plane text-xs"></i>
-                    <span>Kirim Data Absensi</span>
-                </button>
-            </div>
-            
-            <div id="absen-message" class="text-center text-xs font-bold mt-4 hidden p-4 rounded-2xl border animate-fade-in"></div>
-        </section>
-
-        <!-- DASHBOARD SUPERADMIN -->
-        <section id="admin-section" class="hidden w-full bg-white p-6 sm:p-8 rounded-[2rem] shadow-2xl shadow-blue-900/5 border border-slate-100 ring-1 ring-slate-900/5 animate-fade-in">
-            <!-- Isi Dashboard Superadmin (Sama dengan sebelumnya, dipotong untuk fokus) -->
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-100 gap-4">
-                <div>
-                    <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-shield-halved text-indigo-600"></i> Portal Manajemen
-                    </h3>
-                    <p class="text-xs text-slate-500 mt-1 font-medium">Kelola database & cetak laporan formal.</p>
-                </div>
-                
-                <div class="flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80 w-full md:w-auto shadow-inner">
-                    <button id="tab-pegawai" class="flex-1 md:flex-none px-5 py-2.5 bg-white text-indigo-600 rounded-xl font-bold text-xs shadow-sm transition ring-1 ring-black/5">Kelola Pegawai</button>
-                    <button id="tab-laporan" class="flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-xl font-bold text-xs transition">Laporan Presensi</button>
-                </div>
-            </div>
-
-            <!-- TAB 1: KELOLA DATA PEGAWAI -->
-            <div id="panel-pegawai" class="space-y-4 animate-fade-in">
-                <div class="flex justify-between items-center">
-                    <h4 class="font-bold text-sm text-slate-800">Data Master Karyawan</h4>
-                    <button id="btn-tambah-pegawai" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2">
-                        <i class="fa-solid fa-plus text-xs"></i> Tambah Pegawai
-                    </button>
-                </div>
-                
-                <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm">
-                    <table class="w-full text-xs text-left whitespace-nowrap">
-                        <thead class="text-[11px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200 font-extrabold">
-                            <tr>
-                                <th class="px-5 py-3.5">NIK</th>
-                                <th class="px-5 py-3.5">Nama Lengkap</th>
-                                <th class="px-5 py-3.5">Hak Akses</th>
-                                <th class="px-5 py-3.5 text-right">Tindakan</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-pegawai-body" class="divide-y divide-slate-100 text-slate-700">
-                            <tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Memuat data karyawan...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TAB 2: LAPORAN PRESENSI -->
-            <div id="panel-laporan" class="hidden space-y-6 animate-fade-in">
-                <!-- Filter Bar -->
-                <div class="flex flex-col md:flex-row justify-between items-end gap-3 bg-gradient-to-br from-slate-50 to-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-                    <div class="flex flex-col sm:flex-row items-end gap-3 w-full md:w-auto">
-                        <div class="w-full sm:w-auto">
-                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Parameter Filter</label>
-                            <select id="filter-type" class="w-full sm:w-auto border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 bg-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition shadow-sm cursor-pointer">
-                                <option value="daily">Harian</option>
-                                <option value="monthly" selected>Bulanan</option>
-                                <option value="yearly">Tahunan</option>
-                            </select>
-                        </div>
-                        <div class="w-full sm:w-auto" id="filter-input-container">
-                            <label id="filter-label" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Bulan & Tahun</label>
-                            <input type="date" id="filter-date" class="hidden w-full sm:w-auto border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 bg-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition shadow-sm">
-                            <input type="month" id="filter-month" class="w-full sm:w-auto border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 bg-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition shadow-sm">
-                            <input type="number" id="filter-year" min="2020" max="2100" placeholder="Cth: 2026" class="hidden w-full sm:w-auto border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 bg-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition shadow-sm">
-                        </div>
-                        <button id="btn-filter" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 active:scale-95 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition shadow-md h-[42px] flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-magnifying-glass"></i> Tampilkan
-                        </button>
-                    </div>
-                    <button id="btn-print" class="w-full md:w-auto bg-gradient-to-b from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-2 h-[42px] border border-indigo-700/50">
-                        <i class="fa-solid fa-print text-sm"></i> Cetak Dokumen Resmi
-                    </button>
-                </div>
-
-                <!-- Tabel UI Website -->
-                <div class="overflow-x-auto border border-slate-200/80 rounded-2xl bg-white shadow-sm ring-1 ring-slate-900/5">
-                    <table class="w-full text-xs text-left whitespace-nowrap">
-                        <thead class="text-[11px] text-slate-500 uppercase bg-slate-50/80 backdrop-blur-sm border-b border-slate-200/80 font-extrabold sticky top-0">
-                            <tr>
-                                <th class="px-5 py-4">Tanggal & Waktu</th>
-                                <th class="px-5 py-4">NIK</th>
-                                <th class="px-5 py-4">Nama Pegawai</th>
-                                <th class="px-5 py-4">Jenis Presensi</th>
-                                <th class="px-5 py-4">Jarak (m)</th>
-                                <th class="px-5 py-4">Ket/Alasan</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-laporan-body" class="divide-y divide-slate-100 text-slate-700">
-                            <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400 font-medium"><i class="fa-regular fa-folder-open text-2xl block mb-2 opacity-50"></i>Silakan pilih parameter filter lalu klik "Tampilkan".</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-        
-    </main>
-
-    <!-- Overlay Loading Global -->
-    <div id="loading-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden flex flex-col items-center justify-center p-4 transition-all">
-        <div class="bg-white/90 backdrop-blur-xl border border-slate-200/50 p-6 rounded-3xl shadow-2xl flex flex-col items-center min-w-[220px] animate-fade-in ring-1 ring-white/50">
-            <div class="w-10 h-10 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mb-4 shadow-sm"></div>
-            <p id="loading-text" class="text-slate-700 font-bold text-xs text-center tracking-wide">Memproses Data...</p>
-        </div>
-    </div>
-
-    <!-- KONTENER CETAK ABSOLUT A4 FORMAL (Tampil Paling Atas Kertas) -->
-    <div id="print-container" class="hidden">
-        
-        <!-- KOP SURAT FORMAL -->
-        <div class="kop-surat">
-            <div class="logo-instansi">
-                <!-- Gunakan Tag img jika ada logo asli, disini pakai icon placeholder formal -->
-                <div style="width: 70px; height: 70px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
-                    <i class="fa-solid fa-building-columns" style="font-size: 32px; color: #000;"></i>
-                </div>
-            </div>
-            <div class="teks-kop">
-                <h1 class="nama-perusahaan">PT. PERUSAHAAN TEKNOLOGI NUSANTARA</h1>
-                <p class="alamat-perusahaan">Gedung Pusat Bisnis Terpadu, Jl. Sudirman No. 123, Jakarta Pusat 10220</p>
-                <p class="kontak-perusahaan">Telepon: (021) 12345678 | Email: hrd@perusahaanteknologi.co.id | Web: www.perusahaanteknologi.co.id</p>
-            </div>
-        </div>
-        
-        <div class="garis-kop"></div>
-        <div class="garis-kop-tipis"></div>
-
-        <!-- JUDUL LAPORAN -->
-        <div class="judul-dokumen">
-            <h2>LAPORAN REKAPITULASI PRESENSI PEGAWAI</h2>
-            <p id="print-date-info">PERIODE: ...</p>
-        </div>
-
-        <!-- TABEL CETAK FORMAL -->
-        <table class="print-table">
-            <thead>
-                <tr>
-                    <th style="width: 5%">NO</th>
-                    <th style="width: 17%">TGL / WAKTU</th>
-                    <th style="width: 12%">NIK</th>
-                    <th style="width: 26%">NAMA LENGKAP</th>
-                    <th style="width: 12%">STATUS</th>
-                    <th style="width: 8%">JARAK</th>
-                    <th style="width: 20%">KETERANGAN</th>
-                </tr>
-            </thead>
-            <tbody id="print-table-body">
-                <tr><td colspan="7" style="text-align: center; padding: 20px;">Belum ada data ditarik.</td></tr>
-            </tbody>
-        </table>
-
-        <!-- TANDA TANGAN (Otomatis letak di bawah) -->
-        <div class="area-ttd">
-            <div class="kotak-ttd">
-                <p id="print-date-signature">Jakarta, ...</p>
-                <p style="margin-bottom: 70px;">Mengetahui,<br><b>Kepala Divisi HRD</b></p>
-                <p style="font-weight: bold; text-decoration: underline;">Dr. H. Nama Pimpinan, M.Si</p>
-                <p>NIP. 19800101 200501 1 001</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Script Utama -->
-    <script src="app.js"></script>
-
-    <style>
-        /* PENGATURAN CETAK DOKUMEN (PRINT) STANDAR A4 FORMAL */
+        /* PENGATURAN CETAK (PRINT) ABSOLUT TOP - STANDAR A4 */
         @media print {
-            /* Definisi Ukuran Kertas Spesifik A4 */
-            @page { 
-                size: A4 portrait; 
-                margin: 0; 
-            }
-            
-            /* Reset dasar seluruh elemen web */
+            @page { size: A4 portrait; margin: 0; }
             body, html { 
                 background: white !important; 
                 margin: 0 !important; 
@@ -349,35 +34,36 @@
                 print-color-adjust: exact !important;
             }
             
-            /* Sembunyikan SEMUA elemen web interaktif */
-            header, main, #loading-overlay, button, nav { display: none !important; }
+            /* Sembunyikan elemen UI website saat diprint */
+            header, main, #loading-overlay, button, nav, #btn-install-pwa { display: none !important; }
             
-            /* TAMPILKAN KONTENER CETAK DENGAN METODE ABSOLUTE TOP-DOWN */
+            /* Munculkan khusus layout cetak (Kop Surat) & paksa posisinya ke atas absolut */
             #print-container { 
                 display: block !important; 
                 position: absolute !important;
                 top: 0 !important;
                 left: 0 !important;
-                width: 210mm !important; /* Presisi Lebar A4 */
-                min-height: 297mm !important; /* Presisi Tinggi A4 */
-                padding: 20mm !important; /* Margin dokumen (atas, kiri, kanan) */
+                width: 210mm !important; 
+                min-height: 297mm !important;
+                padding: 15mm 20mm !important; 
                 box-sizing: border-box !important;
                 background: white !important;
-                font-family: 'Times New Roman', Times, serif !important; /* Font Formal Dokumen Pemerintah/Instansi */
+                font-family: 'Times New Roman', Times, serif !important;
                 color: #000 !important;
             }
 
-            /* Styling Kop Surat Formal */
+            /* Desain Khusus Kop Surat Dokumen Resmi */
             .kop-surat { display: flex !important; align-items: center !important; margin-bottom: 10px !important; }
-            .logo-instansi { width: 80px !important; flex-shrink: 0 !important; }
-            .teks-kop { flex-grow: 1 !important; text-align: center !important; padding-right: 40px !important; } /* padding-right untuk penyeimbang posisi logo */
+            .logo-instansi { width: 80px !important; flex-shrink: 0 !important; text-align: center; }
+            .logo-instansi i { font-size: 40px !important; color: #000 !important; }
+            .teks-kop { flex-grow: 1 !important; text-align: center !important; padding-right: 40px !important; } 
             
-            .nama-perusahaan { font-size: 20px !important; font-weight: bold !important; margin: 0 0 4px 0 !important; letter-spacing: 1px !important; }
+            .nama-perusahaan { font-size: 22px !important; font-weight: bold !important; margin: 0 0 5px 0 !important; letter-spacing: 1px !important; text-transform: uppercase !important;}
             .alamat-perusahaan { font-size: 13px !important; margin: 0 0 2px 0 !important; }
             .kontak-perusahaan { font-size: 11px !important; margin: 0 !important; }
             
-            /* Garis Kop Ganda */
-            .garis-kop { border-top: 3px solid #000 !important; margin-top: 5px !important; }
+            /* Garis Batas Kop */
+            .garis-kop { border-top: 3px solid #000 !important; margin-top: 8px !important; }
             .garis-kop-tipis { border-top: 1px solid #000 !important; margin-top: 2px !important; margin-bottom: 25px !important; }
 
             /* Judul Laporan */
@@ -385,31 +71,304 @@
             .judul-dokumen h2 { font-size: 16px !important; font-weight: bold !important; text-decoration: underline !important; margin: 0 0 5px 0 !important; }
             .judul-dokumen p { font-size: 12px !important; font-weight: bold !important; margin: 0 !important; }
 
-            /* Styling Tabel Formal */
-            .print-table { 
-                border-collapse: collapse !important; 
-                width: 100% !important; 
-                font-size: 12px !important; 
-                margin-bottom: 30px !important; 
-            }
-            .print-table th, .print-table td { 
-                border: 1px solid #000 !important; 
-                padding: 8px 6px !important; 
-                color: #000 !important; 
-                vertical-align: top !important; /* Teks posisi di atas cell */
-            }
-            .print-table th { 
-                background-color: #f2f2f2 !important; 
-                font-weight: bold !important; 
-                text-align: center !important; 
-                padding: 10px 6px !important;
-            }
+            /* Tabel Formal Hitam Putih */
+            .print-table { border-collapse: collapse !important; width: 100% !important; font-size: 11px !important; margin-bottom: 30px !important; }
+            .print-table th, .print-table td { border: 1px solid #000 !important; padding: 8px 6px !important; color: #000 !important; vertical-align: top !important; }
+            .print-table th { background-color: #f2f2f2 !important; font-weight: bold !important; text-align: center !important; padding: 10px 6px !important; text-transform: uppercase; }
 
-            /* Area Tanda Tangan */
-            .area-ttd { width: 100% !important; display: flex !important; justify-content: flex-end !important; margin-top: 20px !important; page-break-inside: avoid !important; }
-            .kotak-ttd { text-align: center !important; width: 250px !important; font-size: 13px !important; line-height: 1.4 !important; }
+            /* Kotak Tanda Tangan */
+            .area-ttd { width: 100% !important; display: flex !important; justify-content: flex-end !important; margin-top: 30px !important; page-break-inside: avoid !important; }
+            .kotak-ttd { text-align: center !important; width: 250px !important; font-size: 12px !important; line-height: 1.4 !important; }
             .kotak-ttd p { margin: 0 0 4px 0 !important; }
         }
     </style>
+</head>
+<body class="bg-[#f8fafc] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/80 via-slate-50 to-slate-100 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-blue-200">
+
+    <!-- HEADER NAVIGATION -->
+    <header class="bg-white/70 backdrop-blur-xl border-b border-white/50 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                    <i class="fa-solid fa-location-dot text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg text-slate-800 leading-tight tracking-tight">Geo<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">Absen</span></h1>
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portal Digital</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button id="btn-install-pwa" class="hidden items-center gap-2 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-[11px] font-bold px-3 py-2 rounded-xl transition shadow-md shadow-blue-500/20 active:scale-95 border border-blue-600/50">
+                    <i class="fa-solid fa-download"></i> Unduh App
+                </button>
+
+                <div id="user-info" class="hidden items-center gap-3 bg-white/60 backdrop-blur-md p-1.5 pl-4 rounded-full border border-white shadow-sm">
+                    <div class="text-right hidden sm:block">
+                        <div id="display-name" class="text-xs font-bold text-slate-800 truncate max-w-[120px]"></div>
+                        <div id="display-role" class="text-[10px] text-blue-600 font-extrabold uppercase tracking-wider"></div>
+                    </div>
+                    <button id="btn-logout" class="bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 w-8 h-8 rounded-full flex items-center justify-center shadow-inner transition shrink-0" title="Keluar">
+                        <i class="fa-solid fa-power-off text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow flex items-center justify-center p-4 sm:p-6 w-full max-w-6xl mx-auto">
+        
+        <!-- FORM LOGIN -->
+        <section id="login-section" class="w-full max-w-sm bg-white/80 backdrop-blur-2xl p-8 rounded-[2.5rem] shadow-2xl shadow-blue-900/5 border border-white ring-1 ring-slate-900/5 animate-fade-in">
+            <div class="text-center mb-8">
+                <div class="inline-flex p-4 rounded-2xl bg-blue-50 text-blue-600 mb-4 shadow-inner">
+                    <i class="fa-solid fa-fingerprint text-4xl"></i>
+                </div>
+                <h2 class="text-2xl font-black text-slate-800 tracking-tight">Login Portal</h2>
+                <p class="text-slate-500 text-xs mt-2 font-medium">Verifikasi identitas karyawan Anda.</p>
+            </div>
+
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">N.I.K Karyawan</label>
+                    <div class="relative group">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                            <i class="fa-regular fa-id-card"></i>
+                        </span>
+                        <input type="text" id="login-nik" required placeholder="Masukkan NIK..." 
+                               class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm font-bold outline-none shadow-inner">
+                    </div>
+                </div>
+                
+                <button type="submit" id="btn-login" class="w-full bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:scale-95 text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-600/25 transition-all flex justify-center items-center gap-2 text-sm border border-blue-700/50">
+                    <span>Akses Dashboard</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+                
+                <div id="login-error" class="text-rose-500 text-xs font-bold text-center hidden p-3 bg-rose-50 rounded-xl border border-rose-100"></div>
+            </form>
+        </section>
+
+        <!-- DASHBOARD PEGAWAI -->
+        <section id="employee-section" class="hidden w-full max-w-md bg-white/90 backdrop-blur-xl p-6 rounded-[2rem] shadow-2xl shadow-blue-900/5 border border-white ring-1 ring-slate-900/5 animate-fade-in">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                <div>
+                    <h3 class="text-lg font-extrabold text-slate-800">Modul Presensi</h3>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Rekam Data Kehadiran</p>
+                </div>
+                <div id="live-clock" class="text-xs font-extrabold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl shadow-inner tracking-wider">00:00</div>
+            </div>
+            
+            <div id="location-banner" class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-5 text-xs flex items-center gap-3 transition-colors shadow-inner">
+                <div id="location-icon-wrapper" class="p-2 rounded-xl bg-slate-200 text-slate-600 shrink-0">
+                    <i class="fa-solid fa-satellite-dish text-base animate-pulse"></i>
+                </div>
+                <div class="flex-grow">
+                    <span class="font-bold block text-slate-800 mb-0.5">Status GPS Aktif</span>
+                    <span id="location-status" class="text-slate-500 font-medium">Mencari koordinat satelit...</span>
+                </div>
+            </div>
+
+            <div id="camera-wrapper" class="mb-5 relative w-full h-56 rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner">
+                <video id="video" autoplay playsinline class="w-full h-full object-cover hidden transform scale-x-[-1]"></video>
+                <canvas id="canvas" class="hidden"></canvas>
+                <div id="camera-placeholder" class="text-slate-400 text-center flex flex-col items-center justify-center h-full p-6">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center mb-3 text-slate-500"><i class="fa-solid fa-camera text-xl"></i></div>
+                    <p class="text-[11px] font-bold text-slate-300 tracking-wide">Mengakses Kamera Depan...</p>
+                </div>
+                <div id="live-badge" class="hidden absolute top-3 left-3 bg-slate-900/70 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold tracking-widest items-center gap-1.5 border border-white/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> LIVE
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Kategori Kehadiran</label>
+                    <select id="absen-type" class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer transition text-sm shadow-inner"></select>
+                </div>
+
+                <div id="keterangan-container" class="hidden animate-fade-in">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Alasan / Bukti (<span class="text-rose-500">Wajib</span>)</label>
+                    <textarea id="absen-keterangan" rows="2" placeholder="Tulis alasan secara singkat..." class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm font-medium shadow-inner"></textarea>
+                </div>
+
+                <button id="btn-absen" disabled class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-4 px-4 rounded-2xl shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 disabled:active:scale-100 flex justify-center items-center gap-2 text-sm mt-2">
+                    <i class="fa-solid fa-paper-plane text-xs"></i> <span>Kirim Data Absen</span>
+                </button>
+            </div>
+            
+            <div id="absen-message" class="hidden"></div>
+        </section>
+
+        <!-- DASHBOARD SUPERADMIN -->
+        <section id="admin-section" class="hidden w-full bg-white/90 backdrop-blur-xl p-6 sm:p-8 rounded-[2rem] shadow-2xl shadow-blue-900/5 border border-white ring-1 ring-slate-900/5 animate-fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-100 gap-4">
+                <div>
+                    <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-shield-halved text-sm"></i></div>
+                        Administrator
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-1 font-medium">Manajemen Master Data & Dokumen</p>
+                </div>
+                
+                <div class="flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80 w-full md:w-auto shadow-inner">
+                    <button id="tab-pegawai" class="flex-1 md:flex-none px-5 py-2.5 bg-white text-blue-600 rounded-xl font-bold text-xs shadow-sm transition ring-1 ring-black/5">Data Karyawan</button>
+                    <button id="tab-laporan" class="flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-xl font-bold text-xs transition">Laporan Presensi</button>
+                </div>
+            </div>
+
+            <!-- TAB PEGAWAI -->
+            <div id="panel-pegawai" class="space-y-4 animate-fade-in">
+                <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm ring-1 ring-slate-900/5">
+                    <table class="w-full text-xs text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-slate-400 uppercase bg-slate-50 border-b border-slate-100 font-extrabold tracking-wider">
+                            <tr>
+                                <th class="px-5 py-4">Nomor Induk</th>
+                                <th class="px-5 py-4">Nama Lengkap</th>
+                                <th class="px-5 py-4">Kewenangan</th>
+                                <th class="px-5 py-4 text-right">Manajemen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-pegawai-body" class="divide-y divide-slate-50 text-slate-700 font-medium"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB LAPORAN -->
+            <div id="panel-laporan" class="hidden space-y-6 animate-fade-in">
+                
+                <!-- Indikator Statistik (Baru) -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                        <div>
+                            <div class="text-[10px] text-slate-400 font-bold uppercase">Total Rekaman</div>
+                            <div class="text-xl font-black text-slate-800" id="stat-total">0</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400"><i class="fa-solid fa-list-ol"></i></div>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                        <div>
+                            <div class="text-[10px] text-emerald-500 font-bold uppercase">Absen Masuk</div>
+                            <div class="text-xl font-black text-slate-800" id="stat-masuk">0</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500"><i class="fa-solid fa-arrow-right-to-bracket"></i></div>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                        <div>
+                            <div class="text-[10px] text-blue-500 font-bold uppercase">Absen Pulang</div>
+                            <div class="text-xl font-black text-slate-800" id="stat-keluar">0</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                        <div>
+                            <div class="text-[10px] text-rose-500 font-bold uppercase">Cuti / Izin</div>
+                            <div class="text-xl font-black text-slate-800" id="stat-izin">0</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-500"><i class="fa-solid fa-file-signature"></i></div>
+                    </div>
+                </div>
+
+                <!-- Modul Filter Canggih -->
+                <div class="flex flex-col md:flex-row justify-between items-end gap-3 bg-slate-50/50 p-5 rounded-2xl border border-slate-200/80 shadow-inner">
+                    <div class="flex flex-col sm:flex-row items-end gap-3 w-full md:w-auto">
+                        <div class="w-full sm:w-auto">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Tipe Laporan</label>
+                            <select id="filter-type" class="w-full sm:w-auto border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 bg-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition shadow-sm cursor-pointer">
+                                <option value="daily">Harian</option>
+                                <option value="monthly" selected>Bulanan</option>
+                                <option value="yearly">Tahunan</option>
+                            </select>
+                        </div>
+                        <div class="w-full sm:w-auto">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Parameter</label>
+                            <input type="date" id="filter-date" class="hidden w-full sm:w-auto border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-500/20 transition shadow-sm">
+                            <input type="month" id="filter-month" class="w-full sm:w-auto border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-500/20 transition shadow-sm">
+                            <input type="number" id="filter-year" class="hidden w-full sm:w-auto border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-500/20 transition shadow-sm" placeholder="Contoh: 2026">
+                        </div>
+                        <button id="btn-filter" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition shadow-md h-[42px]">
+                            Tampilkan
+                        </button>
+                    </div>
+                    <button id="btn-print" class="w-full md:w-auto bg-white border border-slate-200 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-6 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 h-[42px]">
+                        <i class="fa-solid fa-print"></i> Cetak Dokumen A4
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm ring-1 ring-slate-900/5 max-h-[500px]">
+                    <table class="w-full text-xs text-left whitespace-nowrap">
+                        <thead class="text-[10px] text-slate-400 uppercase bg-slate-50/90 backdrop-blur-sm border-b border-slate-100 font-extrabold sticky top-0 tracking-wider">
+                            <tr>
+                                <th class="px-5 py-4">Tgl & Waktu</th>
+                                <th class="px-5 py-4">NIK</th>
+                                <th class="px-5 py-4">Nama Pegawai</th>
+                                <th class="px-5 py-4">Status</th>
+                                <th class="px-5 py-4">Radius</th>
+                                <th class="px-5 py-4">Keterangan</th>
+                                <th class="px-5 py-4">Bukti Foto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-laporan-body" class="divide-y divide-slate-50 text-slate-700"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+    </main>
+
+    <!-- LOADING OVERLAY -->
+    <div id="loading-overlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center p-4 transition-all">
+        <div class="bg-white/90 backdrop-blur-xl border border-white p-6 rounded-3xl shadow-2xl flex flex-col items-center min-w-[200px] animate-fade-in ring-1 ring-slate-900/5">
+            <div class="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <p id="loading-text" class="text-slate-700 font-bold text-xs tracking-wide">Memproses...</p>
+        </div>
+    </div>
+
+    <!-- KONTENER CETAK ABSOLUT TOP (KOP SURAT A4) -->
+    <div id="print-container" class="hidden">
+        <div class="kop-surat">
+            <div class="logo-instansi"><i class="fa-solid fa-building-columns"></i></div>
+            <div class="teks-kop">
+                <h1 class="nama-perusahaan">PT. PERUSAHAAN TEKNOLOGI NUSANTARA</h1>
+                <p class="alamat-perusahaan">Gedung Pusat Bisnis Terpadu, Jl. Sudirman No. 123, Jakarta Pusat 10220</p>
+                <p class="kontak-perusahaan">Telepon: (021) 12345678 | Email: hrd@perusahaanteknologi.co.id</p>
+            </div>
+        </div>
+        
+        <div class="garis-kop"></div>
+        <div class="garis-kop-tipis"></div>
+
+        <div class="judul-dokumen">
+            <h2>LAPORAN REKAPITULASI PRESENSI PEGAWAI</h2>
+            <p id="print-date-info">PERIODE: ...</p>
+        </div>
+
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%">NO</th>
+                    <th style="width: 17%">TANGGAL/WAKTU</th>
+                    <th style="width: 12%">NIK</th>
+                    <th style="width: 25%">NAMA KARYAWAN</th>
+                    <th style="width: 12%">STATUS</th>
+                    <th style="width: 8%">JARAK</th>
+                    <th style="width: 21%">KETERANGAN</th>
+                </tr>
+            </thead>
+            <tbody id="print-table-body"></tbody>
+        </table>
+
+        <div class="area-ttd">
+            <div class="kotak-ttd">
+                <p id="print-date-signature">Jakarta, ...</p>
+                <p style="margin-bottom: 60px;">Mengetahui,<br><b>Kepala Divisi HRD</b></p>
+                <p style="font-weight: bold; text-decoration: underline;">Dr. H. Nama Pimpinan, M.Si</p>
+                <p>NIP. 19800101 200501 1 001</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
