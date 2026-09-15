@@ -217,34 +217,36 @@
             <div id="panel-laporan" class="hidden space-y-6 animate-fade-in">
                 <!-- Filter Bar -->
                 <div class="flex flex-col sm:flex-row justify-between items-end gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-                    <div class="flex items-end gap-3 w-full sm:w-auto">
+                    <div class="flex flex-col sm:flex-row items-end gap-3 w-full sm:w-auto">
                         <div class="w-full sm:w-auto">
-                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Tanggal Presensi</label>
-                            <input type="date" id="filter-date" class="w-full sm:w-auto border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-700 bg-white outline-none focus:border-blue-500 transition">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Tipe Filter</label>
+                            <select id="filter-type" class="w-full sm:w-auto border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-700 bg-white outline-none focus:border-blue-500 transition shadow-inner">
+                                <option value="daily">Harian</option>
+                                <option value="monthly" selected>Bulanan</option>
+                                <option value="yearly">Tahunan</option>
+                            </select>
                         </div>
-                        <button id="btn-filter" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm h-[36px]">
+                        <div class="w-full sm:w-auto" id="filter-input-container">
+                            <label id="filter-label" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bulan & Tahun</label>
+                            <input type="date" id="filter-date" class="hidden w-full sm:w-auto border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-700 bg-white outline-none focus:border-blue-500 transition shadow-inner">
+                            <input type="month" id="filter-month" class="w-full sm:w-auto border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-700 bg-white outline-none focus:border-blue-500 transition shadow-inner">
+                            <input type="number" id="filter-year" min="2020" max="2100" placeholder="Ketik Tahun (Cth: 2026)" class="hidden w-full sm:w-auto border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-700 bg-white outline-none focus:border-blue-500 transition shadow-inner">
+                        </div>
+                        <button id="btn-filter" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm h-[36px]">
                             Tampilkan
                         </button>
                     </div>
                     <button id="btn-print" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 h-[36px]">
-                        <i class="fa-solid fa-print text-xs"></i> Cetak Dokumen
+                        <i class="fa-solid fa-print text-xs"></i> Cetak Laporan
                     </button>
                 </div>
 
-                <!-- Area Cetak Laporan Resmi -->
-                <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm" id="print-area">
-                    <div class="p-6 border-b border-slate-200 hidden print-show">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Laporan Kehadiran Karyawan</h2>
-                                <p class="text-xs text-slate-600 mt-1 font-semibold" id="print-date-info"></p>
-                            </div>
-                        </div>
-                    </div>
-                    <table class="w-full text-xs text-left whitespace-nowrap">
+                <!-- Tabel UI Website -->
+                <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm">
+                    <table class="w-full text-xs text-left whitespace-nowrap mt-2">
                         <thead class="text-[11px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200 font-extrabold">
                             <tr>
-                                <th class="px-5 py-3.5">Waktu</th>
+                                <th class="px-5 py-3.5">Tanggal & Waktu</th>
                                 <th class="px-5 py-3.5">NIK</th>
                                 <th class="px-5 py-3.5">Nama Pegawai</th>
                                 <th class="px-5 py-3.5">Jenis Presensi</th>
@@ -253,7 +255,7 @@
                             </tr>
                         </thead>
                         <tbody id="table-laporan-body" class="divide-y divide-slate-100 text-slate-700">
-                            <tr><td colspan="6" class="px-5 py-8 text-center text-slate-400 font-medium">Pilih tanggal untuk melihat laporan.</td></tr>
+                            <tr><td colspan="6" class="px-5 py-8 text-center text-slate-400 font-medium">Silakan pilih filter untuk melihat laporan.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -270,42 +272,92 @@
         </div>
     </div>
 
+    <!-- KONTENER CETAK ABSOLUT A4 (Hanya Tampil Saat Diprint) -->
+    <div id="print-container" class="hidden">
+        <!-- KOP SURAT -->
+        <div class="flex items-center justify-between border-b-[3px] border-black pb-4 mb-6">
+            <div class="w-20 h-20 bg-slate-100 flex items-center justify-center rounded-xl border-2 border-slate-800 grayscale">
+                <i class="fa-solid fa-building-columns text-4xl text-slate-800"></i>
+            </div>
+            <div class="text-center flex-1 px-4">
+                <h1 class="text-2xl font-black text-black tracking-widest uppercase">NAMA PERUSAHAAN / INSTANSI</h1>
+                <p class="text-sm text-black font-bold mt-1">Gedung Pusat, Jl. Contoh Alamat No. 123, Kota Besar 45678</p>
+                <p class="text-xs text-black mt-1">Telp: (021) 12345678 | Email: hrd@perusahaan.com | Web: www.perusahaan.com</p>
+            </div>
+        </div>
+        
+        <!-- JUDUL LAPORAN -->
+        <div class="text-center mb-6">
+            <h2 class="text-lg font-black text-black uppercase underline underline-offset-4 decoration-2 mb-1">LAPORAN REKAPITULASI PRESENSI PEGAWAI</h2>
+            <p class="text-sm text-black font-bold uppercase" id="print-date-info">PERIODE: ...</p>
+        </div>
+
+        <!-- TABEL CETAK -->
+        <table class="print-table w-full">
+            <thead>
+                <tr>
+                    <th style="width: 5%">NO</th>
+                    <th style="width: 15%">TGL / WAKTU</th>
+                    <th style="width: 15%">NIK</th>
+                    <th style="width: 25%">NAMA LENGKAP</th>
+                    <th style="width: 15%">STATUS</th>
+                    <th style="width: 10%">JARAK</th>
+                    <th style="width: 15%">KETERANGAN</th>
+                </tr>
+            </thead>
+            <tbody id="print-table-body">
+                <tr><td colspan="7" class="text-center py-4 text-black">Belum ada data</td></tr>
+            </tbody>
+        </table>
+
+        <!-- TANDA TANGAN -->
+        <div class="flex justify-end text-sm text-black mt-12 w-full pb-8">
+            <div class="text-center">
+                <p id="print-date-signature" class="mb-1">Jakarta, ...</p>
+                <p class="mb-20 font-medium">Mengetahui,<br><b>Kepala Divisi HRD</b></p>
+                <p class="font-bold underline underline-offset-4 decoration-2">Dr. H. Nama Pimpinan, M.Si</p>
+                <p class="text-xs mt-1">NIP. 19800101 200501 1 001</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Script Utama -->
     <script src="app.js"></script>
 
     <style>
-        /* PENGATURAN CETAK (PRINT) YANG DIPERBAIKI */
+        /* PENGATURAN CETAK (PRINT) ABSOLUT A4 PORTRAIT */
         @media print {
-            /* Reset margin kertas sepenuhnya */
-            @page { margin: 1cm; }
-            body, html { background: white !important; color: black !important; margin: 0 !important; padding: 0 !important; }
+            @page { margin: 0; size: A4 portrait; }
             
-            /* Sembunyikan SEMUA elemen secara bawaan saat diprint */
-            body * { visibility: hidden; }
-            
-            /* Sembunyikan elemen UI yang mengganggu flow */
-            header, #login-section, #employee-section, #tab-pegawai, #tab-laporan, #btn-filter, #btn-print, #filter-date, label, .grid, #location-banner, #btn-install-pwa { display: none !important; }
-            
-            /* Tampilkan dan paksa area print berada tepat di pojok kiri atas kertas */
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 100%; 
-                margin: 0 !important;
-                padding: 0 !important;
-                border: none !important; 
-                box-shadow: none !important; 
+            /* Reset dasar seluruh elemen HTML */
+            body, html { 
+                background: white !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
             
-            .print-show { display: block !important; }
-            #admin-section { box-shadow: none !important; padding: 0 !important; border: none !important; }
+            /* Sembunyikan elemen web utama */
+            header, main, #loading-overlay { display: none !important; }
             
-            /* Perbaiki tabel cetak */
-            table { border-collapse: collapse; width: 100%; font-size: 10px !important; margin-top: 20px; }
-            th, td { border: 1px solid #cbd5e1 !important; padding: 8px !important; color: black !important; }
-            th { background-color: #f8fafc !important; font-weight: bold; }
+            /* Tampilkan container cetak dengan posisi absolut dari titik (0,0) kertas */
+            #print-container { 
+                display: block !important; 
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 210mm !important; /* Lebar Kertas A4 */
+                padding: 20mm !important; /* Margin dari tepi kertas (2cm) */
+                box-sizing: border-box !important;
+                background: white !important;
+            }
+
+            /* Styling Tabel Cetak yang Rapi */
+            .print-table { border-collapse: collapse !important; width: 100% !important; font-size: 11px !important; margin-bottom: 20px !important; border: 1px solid black !important;}
+            .print-table th, .print-table td { border: 1px solid black !important; padding: 8px !important; color: black !important; }
+            .print-table th { background-color: #e2e8f0 !important; font-weight: 800 !important; text-align: center !important; }
+            .print-table td { vertical-align: middle !important; }
         }
     </style>
 </body>

@@ -1,8 +1,8 @@
 // --- KONFIGURASI APLIKASI ---
-const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbx0UwvWJyPNF02P-8IkDQtGQHNPLw6CI3ashCIgfg4OpP8EjrdbIh4sWF6kn6EwcGoV7A/exec"; // PASTE URL WEB APP APPS SCRIPT DI SINI
+const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbycd5NpVq5VBgUrbNoCiA5pmL-lnn1ot8X3KpQgPiDO-MC2pP7Ki0cslUN7kxVeMb2rVg/exec"; // PASTE URL WEB APP APPS SCRIPT DI SINI
 const KANTOR_LAT = -5.300456628608312;
 const KANTOR_LNG = 105.03455748021706;
-const MAKSIMAL_RADIUS_METER = 25; // Radius Maksimal
+const MAKSIMAL_RADIUS_METER = 30; // Radius Maksimal
 
 // Variabel State
 let currentUser = null;
@@ -421,25 +421,125 @@ window.hapusPegawai = async function(nik) {
     }
 };
 
+const filterTypeSelect = document.getElementById('filter-type');
+const filterDateInput = document.getElementById('filter-date');
+const filterMonthInput = document.getElementById('filter-month');
+const filterYearInput = document.getElementById('filter-year');
+const filterLabel = document.getElementById('filter-label');
+
+if(filterTypeSelect) {
+    filterTypeSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        filterDateInput.classList.add('hidden');
+        filterMonthInput.classList.add('hidden');
+        filterYearInput.classList.add('hidden');
+        
+        if(val === 'daily') {
+            filterLabel.textContent = 'Pilih Tanggal';
+            filterDateInput.classList.remove('hidden');
+        } else if (val === 'monthly') {
+            filterLabel.textContent = 'Bulan & Tahun';
+            filterMonthInput.classList.remove('hidden');
+        } else if (val === 'yearly') {
+            filterLabel.textContent = 'Tahun';
+            filterYearInput.classList.remove('hidden');
+        }
+    });
+}
+
 document.getElementById('btn-filter').addEventListener('click', async () => {
-    const tgl = document.getElementById('filter-date').value;
-    if (!tgl) return;
+    const fType = document.getElementById('filter-type').value;
+    let fValue = '';
+    let printTitle = '';
+    
+    // Validasi input dan pembentukan Judul Cetak
+    if(fType === 'daily') {
+        fValue = document.getElementById('filter-date').value;
+        if(!fValue) return alert("Pilih tanggal terlebih dahulu!");
+        printTitle = `TANGGAL: ${fValue.split('-').reverse().join('/')}`;
+    } else if (fType === 'monthly') {
+        fValue = document.getElementById('filter-month').value;
+        if(!fValue) return alert("Pilih bulan dan tahun terlebih dahulu!");
+        const [yyyy, mm] = fValue.split('-');
+        const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        printTitle = `BULAN: ${namaBulan[parseInt(mm)-1].toUpperCase()} ${yyyy}`;
+    } else if (fType === 'yearly') {
+        fValue = document.getElementById('filter-year').value;
+        if(!fValue) return alert("Ketik tahun terlebih dahulu!");
+        printTitle = `TAHUN: ${fValue}`;
+    }
+    
+    // Simpan judul di variabel global untuk saat tombol cetak ditekan
+    window.currentPrintTitle = printTitle;
+    
     const tbody = document.getElementById('table-laporan-body');
+    const tbodyPrint = document.getElementById('print-table-body');
+    
     tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">Memuat laporan...</td></tr>';
+    
     try {
-        const data = await fetchBackend('getLaporan', [tgl]);
+        const data = await fetchBackend('getLaporan', [fValue, fType]);
         tbody.innerHTML = '';
-        data.forEach(d => {
+        if(tbodyPrint) tbodyPrint.innerHTML = '';
+        
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">Tidak ada data untuk periode ini.</td></tr>';
+            if(tbodyPrint) tbodyPrint.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-black">Tidak ada data</td></tr>';
+            return;
+        }
+
+        data.forEach((d, index) => {
+            // Render Tabel Tampilan UI Layar
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="px-5 py-3.5 font-bold">${d.waktu}</td>
+                <td class="px-5 py-3.5"><span class="font-bold text-slate-700">${d.tanggal}</span> <br> <span class="text-[10px] text-slate-500">${d.waktu}</span></td>
                 <td class="px-5 py-3.5">${d.nik}</td>
-                <td class="px-5 py-3.5">${d.nama}</td>
-                <td class="px-5 py-3.5 font-bold text-blue-600">${d.tipe}</td>
+                <td class="px-5 py-3.5 font-bold">${d.nama}</td>
+                <td class="px-5 py-3.5 text-blue-600 font-bold">${d.tipe}</td>
                 <td class="px-5 py-3.5">${d.jarak ? d.jarak + 'm' : '-'}</td>
                 <td class="px-5 py-3.5">${d.keterangan || '-'}</td>
             `;
             tbody.appendChild(tr);
+            
+            // Render Tabel Khusus Area Cetak/Print
+            if(tbodyPrint) {
+                const trPrint = document.createElement('tr');
+                trPrint.innerHTML = `
+                    <td class="text-center">${index + 1}</td>
+                    <td class="text-center font-bold">${d.tanggal}<br><span style="font-weight:normal">${d.waktu}</span></td>
+                    <td class="text-center">${d.nik}</td>
+                    <td class="font-bold">${d.nama}</td>
+                    <td class="text-center">${d.tipe}</td>
+                    <td class="text-center">${d.jarak ? d.jarak + 'm' : '-'}</td>
+                    <td>${d.keterangan || '-'}</td>
+                `;
+                tbodyPrint.appendChild(trPrint);
+            }
         });
-    } catch (e) { tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-rose-500">Error</td></tr>'; }
+    } catch (e) { 
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-rose-500">Error memuat data</td></tr>'; 
+    }
 });
+
+const btnPrint = document.getElementById('btn-print');
+if (btnPrint) {
+    btnPrint.addEventListener('click', () => {
+        const printInfo = document.getElementById('print-date-info');
+        const signatureDate = document.getElementById('print-date-signature');
+        
+        // Memasukkan Judul Laporan yang sesuai dengan filter
+        if (printInfo) {
+            printInfo.textContent = window.currentPrintTitle ? `PERIODE ${window.currentPrintTitle}` : 'PILIH FILTER TERLEBIH DAHULU';
+        }
+        
+        // Auto Update Tanggal Tanda Tangan ke Hari Ini
+        if (signatureDate) {
+            const today = new Date();
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            signatureDate.textContent = `Jakarta, ${today.getDate()} ${monthNames[today.getMonth()]} ${today.getFullYear()}`;
+        }
+        
+        // Eksekusi print browser
+        window.print();
+    });
+}
