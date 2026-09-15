@@ -1,6 +1,6 @@
 {
   "name": "E-Absensi Pegawai",
-  "short_name": "Absensi",
+  "short_name": "E-Absensi Pegawai",
   "description": "Aplikasi Absensi Pegawai Berbasis GPS dan Kamera",
   "start_url": "./index.html",
   "display": "standalone",
