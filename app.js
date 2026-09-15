@@ -8,9 +8,9 @@ const MAKSIMAL_RADIUS_METER = 25; // Radius toleransi (meter)
 let currentUser = null;
 let currentLocation = null;
 let stream = null;
-let deferredPrompt = null; // Untuk PWA Install Prompt
+let deferredPrompt = null;
 
-// Elemen DOM (Mencegah pencarian berulang)
+// Referensi DOM Element
 const dom = {
     secLogin: document.getElementById('login-section'),
     secEmployee: document.getElementById('employee-section'),
@@ -22,7 +22,7 @@ const dom = {
     btnLogin: document.getElementById('btn-login'),
     errLogin: document.getElementById('login-error'),
     
-    // Header
+    // Header Elements
     userInfo: document.getElementById('user-info'),
     dispName: document.getElementById('display-name'),
     dispRole: document.getElementById('display-role'),
@@ -46,7 +46,7 @@ const dom = {
     btnStartCam: document.getElementById('btn-start-camera'),
     badgeLive: document.getElementById('live-badge'),
     
-    // Overlay Loading & Modal
+    // Modals & Overlay
     overlayLoad: document.getElementById('loading-overlay'),
     textLoad: document.getElementById('loading-text'),
     modalInstall: document.getElementById('modal-install'),
@@ -56,12 +56,10 @@ const dom = {
 
 // 1. Inisialisasi Service Worker & Session
 window.addEventListener('load', () => {
-    // Daftarkan Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Registration failed:', err));
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Registration error:', err));
     }
 
-    // Cek apakah user sudah login sebelumnya (Anti-Lemot)
     const savedSession = sessionStorage.getItem('e_absensi_session');
     if (savedSession) {
         currentUser = JSON.parse(savedSession);
@@ -69,17 +67,14 @@ window.addEventListener('load', () => {
     }
 });
 
-// 2. Tangkap Event PWA Install
+// 2. Event PWA Install Prompt
 window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault(); // Mencegah banner default muncul
+    e.preventDefault();
     deferredPrompt = e;
     dom.btnInstallPwa.classList.remove('hidden');
-    dom.btnInstallPwa.classList.add('flex', 'animate-pulse'); // Tambahkan efek kedip untuk menarik perhatian
 });
 
-// 3. Tombol Install PWA Diklik
 dom.btnInstallPwa.addEventListener('click', async () => {
-    dom.btnInstallPwa.classList.remove('animate-pulse');
     if (deferredPrompt) {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
@@ -88,28 +83,23 @@ dom.btnInstallPwa.addEventListener('click', async () => {
         }
         deferredPrompt = null;
     } else {
-        // Fallback untuk iOS / Browser yang tidak mendukung prompt otomatis
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        let html = '';
-        if (isIOS) {
-            html = `<ol class="list-decimal pl-4 space-y-2">
-                <li>Ketuk ikon bagikan <i class="fa-solid fa-arrow-up-from-bracket mx-1"></i> di bar bawah browser.</li>
-                <li>Gulir ke bawah dan pilih <b class="text-blue-600">"Add to Home Screen"</b>.</li>
-                <li>Ketuk <b>Add</b> di pojok kanan atas.</li>
-            </ol>`;
-        } else {
-            html = `<p>Tekan menu pengaturan browser (titik tiga) lalu pilih <b>Install App</b> atau <b>Tambahkan ke Layar Utama</b>.</p>`;
-        }
+        let html = isIOS 
+            ? `<ol class="list-decimal pl-4 space-y-2">
+                <li>Ketuk ikon bagikan <i class="fa-solid fa-arrow-up-from-bracket mx-1"></i> di Safari.</li>
+                <li>Pilih <b class="text-blue-600">"Tambah ke Layar Utama"</b>.</li>
+                <li>Ketuk <b>Tambah</b> di sudut kanan atas.</li>
+               </ol>`
+            : `<p>Buka menu titik tiga di browser Anda, lalu pilih <b>Tambahkan ke Layar Utama</b> atau <b>Install Aplikasi</b>.</p>`;
+        
         dom.instPwa.innerHTML = html;
         dom.modalInstall.classList.remove('hidden');
     }
 });
 
-dom.closeInstall.addEventListener('click', () => {
-    dom.modalInstall.classList.add('hidden');
-});
+dom.closeInstall.addEventListener('click', () => dom.modalInstall.classList.add('hidden'));
 
-// Fungsi Loading Overlay
+// Loader Helper
 function toggleLoading(show, message = 'Memproses...') {
     if (show) {
         dom.textLoad.textContent = message;
@@ -119,9 +109,9 @@ function toggleLoading(show, message = 'Memproses...') {
     }
 }
 
-// Rumus Jarak Harvesine
+// Rumus Jarak Haversine
 function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // Radius bumi dalam meter
+    const R = 6371e3;
     const p1 = lat1 * Math.PI/180;
     const p2 = lat2 * Math.PI/180;
     const dp = (lat2-lat1) * Math.PI/180;
@@ -130,18 +120,15 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))));
 }
 
-// Jembatan Asinkron ke Google Apps Script
+// Bridge API Asinkron Fast-Response
 async function fetchBackend(action, params = []) {
     return new Promise((resolve, reject) => {
-        // Jika berjalan langsung di lingkungan Apps Script
         if (typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run
                 .withSuccessHandler(resolve)
                 .withFailureHandler(reject)
                 [action].apply(null, params);
-        } 
-        // Jika berjalan di hosting eksternal (Github Pages)
-        else if (URL_APPS_SCRIPT) {
+        } else if (URL_APPS_SCRIPT) {
             const payloadData = { action: action, parameters: params };
             fetch(URL_APPS_SCRIPT, {
                 method: 'POST',
@@ -150,13 +137,14 @@ async function fetchBackend(action, params = []) {
             })
             .then(res => res.json())
             .then(resolve)
-            .catch(() => reject(new Error("Gagal terhubung ke database. Periksa koneksi internet atau URL API Anda.")));
+            .catch(() => reject(new Error("Gagal terhubung ke database. Periksa koneksi internet.")));
         } else {
-            reject(new Error("URL Apps Script kosong! Pastikan konfigurasi URL_APPS_SCRIPT diisi di app.js."));
+            reject(new Error("URL Apps Script belum diisi di app.js!"));
         }
     });
 }
 
+// Handle Login
 dom.formLogin.addEventListener('submit', async (e) => {
     e.preventDefault();
     const inputNik = dom.inpNik.value.trim();
@@ -168,10 +156,8 @@ dom.formLogin.addEventListener('submit', async (e) => {
 
     try {
         const response = await fetchBackend('login', [inputNik]);
-        
         if (response.success) {
             currentUser = response.data;
-            // Simpan session agar tidak perlu login ulang saat di-refresh
             sessionStorage.setItem('e_absensi_session', JSON.stringify(currentUser));
             renderDashboardBerdasarkanRole();
         } else {
@@ -196,7 +182,7 @@ function renderDashboardBerdasarkanRole() {
     
     if (currentUser.role.toUpperCase() === 'SUPERADMIN') {
         dom.secAdmin.classList.remove('hidden');
-        loadDataPegawaiAdmin(); // Langsung load data
+        loadDataPegawaiAdmin();
     } else {
         dom.secEmployee.classList.remove('hidden');
         inisialisasiGPS();
@@ -209,12 +195,10 @@ dom.btnLogout.addEventListener('click', () => {
     currentUser = null;
     currentLocation = null;
     
-    // Matikan Kamera
     if (stream) stream.getTracks().forEach(track => track.stop());
     dom.video.classList.add('hidden');
     dom.badgeLive.classList.add('hidden');
     
-    // Reset UI
     dom.userInfo.classList.add('hidden');
     dom.secEmployee.classList.add('hidden');
     dom.secAdmin.classList.add('hidden');
@@ -223,45 +207,44 @@ dom.btnLogout.addEventListener('click', () => {
     dom.btnAbsen.disabled = true;
 });
 
-
 // Jam Digital Live
 setInterval(() => {
     const elJam = document.getElementById('live-clock');
     if (elJam) elJam.textContent = new Date().toLocaleTimeString('id-ID');
 }, 1000);
 
-// Inisialisasi GPS (Dijalankan hanya untuk Pegawai)
+// Inisialisasi GPS Realtime
 function inisialisasiGPS() {
     if (!navigator.geolocation) {
-        ubahStatusLokasi('error', 'Browser/HP Anda tidak mendukung GPS.');
+        ubahStatusLokasi('error', 'Browser/HP Anda tidak mendukung fitur lokasi (GPS).');
         return;
     }
 
     navigator.geolocation.watchPosition(
         (pos) => {
             currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            validasiStatusAbsensi(); // Cek ulang ketersediaan tombol setiap ada pergerakan
+            validasiStatusAbsensi();
         },
         (err) => {
-            ubahStatusLokasi('error', 'Akses GPS ditolak / Gagal melacak lokasi.');
+            ubahStatusLokasi('error', 'Izin GPS ditolak atau sinyal lemah.');
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
     );
 }
 
 function ubahStatusLokasi(tipe, pesan) {
     dom.statLoc.textContent = pesan;
     if (tipe === 'success') {
-        dom.bannerLoc.className = "bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6 text-xs flex items-start gap-3";
-        dom.iconLocWrapper.className = "p-2 rounded-lg bg-emerald-100 text-emerald-600 shrink-0";
+        dom.bannerLoc.className = "bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-6 text-xs flex items-start gap-3";
+        dom.iconLocWrapper.className = "p-2 rounded-xl bg-emerald-100 text-emerald-600 shrink-0";
         dom.statLoc.className = "text-emerald-700 font-bold";
     } else if (tipe === 'error') {
-        dom.bannerLoc.className = "bg-rose-50 border border-rose-200 rounded-xl p-4 mb-6 text-xs flex items-start gap-3";
-        dom.iconLocWrapper.className = "p-2 rounded-lg bg-rose-100 text-rose-600 shrink-0";
+        dom.bannerLoc.className = "bg-rose-50 border border-rose-200 rounded-2xl p-4 mb-6 text-xs flex items-start gap-3";
+        dom.iconLocWrapper.className = "p-2 rounded-xl bg-rose-100 text-rose-600 shrink-0";
         dom.statLoc.className = "text-rose-700 font-bold";
-    } else { // Warning / Searching
-        dom.bannerLoc.className = "bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-xs flex items-start gap-3";
-        dom.iconLocWrapper.className = "p-2 rounded-lg bg-amber-100 text-amber-600 shrink-0";
+    } else {
+        dom.bannerLoc.className = "bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-xs flex items-start gap-3";
+        dom.iconLocWrapper.className = "p-2 rounded-xl bg-amber-100 text-amber-600 shrink-0";
         dom.statLoc.className = "text-amber-700 font-medium";
     }
 }
@@ -286,29 +269,24 @@ async function inisialisasiKamera() {
             validasiStatusAbsensi();
         };
     } catch (e) {
-        dom.camPlaceholder.innerHTML = '<span class="text-rose-500 font-bold text-xs"><i class="fa-solid fa-camera-slash text-xl mb-2 block"></i>Kamera Ditolak / Tidak Tersedia</span>';
+        dom.camPlaceholder.innerHTML = '<span class="text-rose-500 font-bold text-xs"><i class="fa-solid fa-camera-slash text-2xl mb-2 block"></i>Izin Kamera Ditolak / Tidak Tersedia</span>';
         dom.btnStartCam.classList.remove('hidden');
     }
 }
 dom.btnStartCam.addEventListener('click', inisialisasiKamera);
 
-
-// FIX: Fungsi Kunci Validasi Form (Sangat Penting untuk Logika Izin)
+// Validasi Form & Tombol Absen
 function validasiStatusAbsensi() {
     const tipeAbsen = dom.selType.value;
     const isKameraAktif = stream !== null && dom.video.srcObject !== null;
 
     if (tipeAbsen === 'TIDAK_HADIR') {
-        // MODE IZIN / SAKIT / CUTI
         dom.conKet.classList.remove('hidden');
-        ubahStatusLokasi('warning', 'Mode Izin Aktif. Jarak GPS diabaikan, namun WAJIB foto selfie.');
+        ubahStatusLokasi('warning', 'Mode Izin/Cuti: Lokasi GPS diabaikan, namun WAJIB selfie & isi keterangan.');
         
-        // Logika: Tombol aktif JIKA keterangan diketik DAN kamera aktif.
         const keteranganVal = dom.inpKet.value.trim();
         dom.btnAbsen.disabled = !(keteranganVal.length > 0 && isKameraAktif);
-        
     } else {
-        // MODE MASUK / KELUAR NORMAL (Wajib GPS & Kamera)
         dom.conKet.classList.add('hidden');
         
         if (!currentLocation) {
@@ -316,38 +294,35 @@ function validasiStatusAbsensi() {
             return;
         }
 
-        // Kalkulasi Jarak Asli
         const jarak = calculateDistance(KANTOR_LAT, KANTOR_LNG, currentLocation.lat, currentLocation.lng);
         let gpsValid = false;
 
         if (jarak <= MAKSIMAL_RADIUS_METER) {
-            ubahStatusLokasi('success', `Anda berada di area kantor. (Jarak: ${jarak}m)`);
+            ubahStatusLokasi('success', `Anda di area kantor. (Jarak: ${jarak}m dari lokasi pusat)`);
             gpsValid = true;
         } else {
-            ubahStatusLokasi('error', `Anda di luar radius. Jarak Anda: ${jarak}m (Batas: ${MAKSIMAL_RADIUS_METER}m)`);
+            ubahStatusLokasi('error', `Di luar area kantor. Jarak: ${jarak}m (Maksimal: ${MAKSIMAL_RADIUS_METER}m)`);
             gpsValid = false;
         }
 
-        // Logika: Tombol aktif JIKA GPS Masuk Area DAN Kamera Aktif
         dom.btnAbsen.disabled = !(gpsValid && isKameraAktif);
     }
 }
 
-// Event Listeners agar tombol reaktif saat pengguna mengetik/memilih
 dom.selType.addEventListener('change', validasiStatusAbsensi);
-dom.inpKet.addEventListener('input', validasiStatusAbsensi); // Memicu pengecekan tiap kali ngetik
+dom.inpKet.addEventListener('input', validasiStatusAbsensi);
 
-// Pengambilan Gambar
+// Kompresi Foto Selfie Super Cepat (Width 400px, JPEG 50%) -> Upload Ringan & Cepat!
 function ambilFotoSelfie() {
-    if (!stream) return ""; // Jika tidak ada kamera (misal mode izin), kembalikan string kosong
+    if (!stream) return "";
     try {
         const ctx = dom.canvas.getContext('2d');
-        dom.canvas.width = dom.video.videoWidth;
-        dom.canvas.height = dom.video.videoHeight;
+        dom.canvas.width = 400;
+        dom.canvas.height = 300;
         ctx.translate(dom.canvas.width, 0);
-        ctx.scale(-1, 1); // Mirror 
+        ctx.scale(-1, 1);
         ctx.drawImage(dom.video, 0, 0, dom.canvas.width, dom.canvas.height);
-        return dom.canvas.toDataURL('image/jpeg', 0.6); // Kompresi 60% agar cepat upload
+        return dom.canvas.toDataURL('image/jpeg', 0.5); 
     } catch(e) {
         return "";
     }
@@ -355,11 +330,10 @@ function ambilFotoSelfie() {
 
 // Eksekusi Absensi
 dom.btnAbsen.addEventListener('click', async () => {
-    // Kunci tombol langsung untuk mencegah Double Click
     dom.btnAbsen.disabled = true;
     
     const tipeAbsen = dom.selType.value;
-    const base64Foto = ambilFotoSelfie(); // Wajib ambil foto untuk SEMUA mode (Masuk, Keluar, dan Izin)
+    const base64Foto = ambilFotoSelfie();
     
     const payloadData = {
         nik: currentUser.nik,
@@ -371,33 +345,30 @@ dom.btnAbsen.addEventListener('click', async () => {
         photo: base64Foto
     };
 
-    toggleLoading(true, 'Mengirim data ke server...');
+    toggleLoading(true, 'Menyimpan kehadiran...');
     dom.msgAbsen.classList.add('hidden');
 
     try {
         const response = await fetchBackend('submitAbsensi', [payloadData]);
         if (response.success) {
-            // Sukses
-            dom.msgAbsen.textContent = `Absensi Berhasil! (${response.time})`;
-            dom.msgAbsen.className = "text-center text-xs font-bold mt-4 p-4 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 animate-fade-in";
+            dom.msgAbsen.textContent = `✅ Absensi Berhasil Disimpan! (${response.time})`;
+            dom.msgAbsen.className = "text-center text-xs font-bold mt-4 p-4 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 animate-fade-in";
             dom.msgAbsen.classList.remove('hidden');
-            dom.inpKet.value = ''; // Reset Form
-            setTimeout(() => dom.msgAbsen.classList.add('hidden'), 5000);
+            dom.inpKet.value = '';
         } else {
             throw new Error(response.message);
         }
     } catch (err) {
-        // Gagal
-        dom.msgAbsen.textContent = `Gagal: ${err.message}`;
-        dom.msgAbsen.className = "text-center text-xs font-bold mt-4 p-4 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 animate-fade-in";
+        dom.msgAbsen.textContent = `⚠️ ${err.message}`;
+        dom.msgAbsen.className = "text-center text-xs font-bold mt-4 p-4 rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 animate-fade-in";
         dom.msgAbsen.classList.remove('hidden');
     } finally {
         toggleLoading(false);
-        validasiStatusAbsensi(); // Buka kembali tombol sesuai kondisi
+        validasiStatusAbsensi();
     }
 });
 
-
+// ADMIN NAVIGASI TAB
 const tabPegawai = document.getElementById('tab-pegawai');
 const tabLaporan = document.getElementById('tab-laporan');
 const panelPegawai = document.getElementById('panel-pegawai');
@@ -406,46 +377,48 @@ const panelLaporan = document.getElementById('panel-laporan');
 tabPegawai.addEventListener('click', () => {
     panelPegawai.classList.remove('hidden');
     panelLaporan.classList.add('hidden');
-    tabPegawai.className = "flex-1 md:flex-none px-5 py-2.5 bg-white text-blue-600 rounded-lg font-bold text-xs shadow-sm transition";
-    tabLaporan.className = "flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-lg font-bold text-xs transition";
+    tabPegawai.className = "flex-1 md:flex-none px-5 py-2.5 bg-white text-blue-600 rounded-xl font-bold text-xs shadow-sm transition";
+    tabLaporan.className = "flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-xl font-bold text-xs transition";
     loadDataPegawaiAdmin();
 });
 
 tabLaporan.addEventListener('click', () => {
     panelPegawai.classList.add('hidden');
     panelLaporan.classList.remove('hidden');
-    tabLaporan.className = "flex-1 md:flex-none px-5 py-2.5 bg-white text-blue-600 rounded-lg font-bold text-xs shadow-sm transition";
-    tabPegawai.className = "flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-lg font-bold text-xs transition";
+    tabLaporan.className = "flex-1 md:flex-none px-5 py-2.5 bg-white text-blue-600 rounded-xl font-bold text-xs shadow-sm transition";
+    tabPegawai.className = "flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-xl font-bold text-xs transition";
+    
     if(!document.getElementById('filter-date').value) {
         document.getElementById('filter-date').value = new Date().toISOString().split('T')[0];
     }
+    loadLaporanAdmin();
 });
 
 async function loadDataPegawaiAdmin() {
     const tbody = document.getElementById('table-pegawai-body');
-    tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-500"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Mengambil data...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Memuat data karyawan...</td></tr>';
     try {
         const data = await fetchBackend('getPegawai', []);
         tbody.innerHTML = '';
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-500">Belum ada karyawan.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Belum ada karyawan terdaftar.</td></tr>';
             return;
         }
         data.forEach(p => {
             const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-50 transition";
+            tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
             
             const badgeRole = p.role.toUpperCase() === 'SUPERADMIN' 
-                ? '<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-[10px] font-extrabold border border-amber-200">ADMIN</span>' 
-                : '<span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[10px] font-extrabold border border-blue-200">PEGAWAI</span>';
+                ? '<span class="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-lg text-[10px] font-extrabold border border-amber-200">SUPERADMIN</span>' 
+                : '<span class="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-extrabold border border-blue-200">PEGAWAI</span>';
                 
             tr.innerHTML = `
-                <td class="px-5 py-3 font-bold text-slate-800">${p.nik}</td>
-                <td class="px-5 py-3 text-slate-600">${p.nama}</td>
-                <td class="px-5 py-3">${badgeRole}</td>
-                <td class="px-5 py-3 text-right">
-                    <button onclick="editPegawai('${p.nik}', '${p.nama}', '${p.role}')" class="text-blue-500 hover:text-blue-700 mr-3"><i class="fa-solid fa-pen-to-square"></i></button>
-                    <button onclick="hapusPegawai('${p.nik}')" class="text-rose-500 hover:text-rose-700 ${p.nik === currentUser.nik ? 'hidden' : ''}"><i class="fa-solid fa-trash-can"></i></button>
+                <td class="px-5 py-3.5 font-bold text-slate-800">${p.nik}</td>
+                <td class="px-5 py-3.5 text-slate-700 font-semibold">${p.nama}</td>
+                <td class="px-5 py-3.5">${badgeRole}</td>
+                <td class="px-5 py-3.5 text-right">
+                    <button onclick="editPegawai('${p.nik}', '${p.nama}', '${p.role}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition mr-1" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button onclick="hapusPegawai('${p.nik}')" class="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition ${p.nik === currentUser.nik ? 'hidden' : ''}" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -455,11 +428,11 @@ async function loadDataPegawaiAdmin() {
     }
 }
 
-// Manajemen Modal Karyawan
+// Modal Pegawai
 const modalPegawai = document.getElementById('modal-pegawai');
 document.getElementById('btn-tambah-pegawai').addEventListener('click', () => {
     document.getElementById('form-mode').value = 'add';
-    document.getElementById('modal-title').textContent = 'Tambah Karyawan';
+    document.getElementById('modal-title').textContent = 'Tambah Karyawan Baru';
     document.getElementById('form-pegawai').reset();
     modalPegawai.classList.remove('hidden');
 });
@@ -476,7 +449,7 @@ window.editPegawai = function(nik, nama, role) {
 };
 
 window.hapusPegawai = async function(nik) {
-    if (confirm(`Yakin ingin menghapus NIK ${nik} secara permanen?`)) {
+    if (confirm(`Yakin ingin menghapus NIK ${nik}?`)) {
         toggleLoading(true, 'Menghapus data...');
         try {
             await fetchBackend('deletePegawai', [nik]);
@@ -497,7 +470,7 @@ document.getElementById('form-pegawai').addEventListener('submit', async (e) => 
     };
 
     modalPegawai.classList.add('hidden');
-    toggleLoading(true, 'Menyimpan ke database...');
+    toggleLoading(true, 'Menyimpan data...');
 
     try {
         const res = mode === 'add' ? await fetchBackend('addPegawai', [payload]) : await fetchBackend('updatePegawai', [oldNik, payload]);
@@ -507,49 +480,74 @@ document.getElementById('form-pegawai').addEventListener('submit', async (e) => 
     finally { toggleLoading(false); }
 });
 
-// Fitur Laporan Lanjut & Cetak
-document.getElementById('btn-filter').addEventListener('click', async () => {
+// LAPORAN PRESENSI + STATISTIK RINGKAS
+async function loadLaporanAdmin() {
     const tgl = document.getElementById('filter-date').value;
-    if (!tgl) { alert("Pilih tanggal dulu!"); return; }
+    if (!tgl) return;
     
     const tbody = document.getElementById('table-laporan-body');
-    tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-slate-500"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Mencari Laporan...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Membuat laporan...</td></tr>';
     
     try {
         const data = await fetchBackend('getLaporan', [tgl]);
         tbody.innerHTML = '';
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-slate-500">Tidak ada presensi pada tanggal ini.</td></tr>';
-            return;
-        }
-        data.forEach(d => {
-            const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-50";
-            
-            // Pewarnaan Badge Status
-            let statColor = "bg-blue-100 text-blue-700 border-blue-200";
-            if(d.tipe === "KELUAR") statColor = "bg-amber-100 text-amber-700 border-amber-200";
-            if(d.tipe === "TIDAK_HADIR") statColor = "bg-slate-200 text-slate-700 border-slate-300";
+        
+        let cMasuk = 0, cKeluar = 0, cIzin = 0;
 
-            tr.innerHTML = `
-                <td class="px-5 py-3 font-semibold text-slate-800">${d.waktu}</td>
-                <td class="px-5 py-3 font-bold">${d.nik}</td>
-                <td class="px-5 py-3 text-slate-700">${d.nama}</td>
-                <td class="px-5 py-3"><span class="px-2 py-1 rounded text-[10px] font-bold border ${statColor}">${d.tipe.replace('_', ' ')}</span></td>
-                <td class="px-5 py-3 text-slate-600">${d.jarak ? d.jarak + ' m' : '-'}</td>
-                <td class="px-5 py-3 text-xs max-w-[150px] truncate text-slate-500" title="${d.keterangan}">${d.keterangan || '-'}</td>
-                <td class="px-5 py-3">${d.fotoUrl ? `<a href="${d.fotoUrl}" target="_blank" class="text-blue-600 hover:underline font-bold"><i class="fa-solid fa-link"></i> Buka Foto</a>` : '<span class="text-slate-400">-</span>'}</td>
-            `;
-            tbody.appendChild(tr);
-        });
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-slate-400 font-medium">Tidak ada data kehadiran pada tanggal ini.</td></tr>';
+        } else {
+            data.forEach(d => {
+                if (d.tipe === "MASUK") cMasuk++;
+                else if (d.tipe === "KELUAR") cKeluar++;
+                else if (d.tipe === "TIDAK_HADIR") cIzin++;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                
+                let badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                let labelStatus = "✅ MASUK";
+                if(d.tipe === "KELUAR") {
+                    badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
+                    labelStatus = "🏃 PULANG";
+                } else if(d.tipe === "TIDAK_HADIR") {
+                    badgeClass = "bg-purple-50 text-purple-700 border-purple-200";
+                    labelStatus = "📝 IZIN / CUTI";
+                }
+
+                tr.innerHTML = `
+                    <td class="px-5 py-3.5 font-bold text-slate-800">${d.waktu}</td>
+                    <td class="px-5 py-3.5 font-bold text-blue-600">${d.nik}</td>
+                    <td class="px-5 py-3.5 font-semibold text-slate-700">${d.nama}</td>
+                    <td class="px-5 py-3.5"><span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold border ${badgeClass}">${labelStatus}</span></td>
+                    <td class="px-5 py-3.5 text-slate-600 font-medium">${d.jarak ? d.jarak + ' m' : '-'}</td>
+                    <td class="px-5 py-3.5 text-slate-500 max-w-[180px] truncate" title="${d.keterangan || '-'}">${d.keterangan || '-'}</td>
+                    <td class="px-5 py-3.5">${d.fotoUrl ? `<a href="${d.fotoUrl}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold transition border border-slate-200"><i class="fa-solid fa-image"></i> Lihat Foto</a>` : '<span class="text-slate-400">-</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Update Counter Statistik Cards
+        document.getElementById('stat-masuk').textContent = cMasuk;
+        document.getElementById('stat-keluar').textContent = cKeluar;
+        document.getElementById('stat-izin').textContent = cIzin;
+        document.getElementById('stat-total').textContent = data.length;
+
     } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-rose-500 font-bold">Koneksi Timeout / Gagal.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-rose-500 font-bold">Gagal memuat laporan presensi.</td></tr>';
     }
-});
+}
+
+document.getElementById('btn-filter').addEventListener('click', loadLaporanAdmin);
 
 document.getElementById('btn-print').addEventListener('click', () => {
     const tgl = document.getElementById('filter-date').value;
-    if(!tgl) { alert("Pilih tanggal dan tampilkan data terlebih dahulu sebelum mencetak."); return; }
-    document.getElementById('print-date-info').textContent = `Rekapitulasi Tanggal: ${tgl}`;
+    if(!tgl) { alert("Pilih tanggal laporan lebih dahulu."); return; }
+    
+    // Tampilkan Info Tanggal Cetak
+    const dateObj = new Date(tgl);
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('print-date-info').textContent = `Tanggal Laporan: ${dateObj.toLocaleDateString('id-ID', options)}`;
     window.print();
 });

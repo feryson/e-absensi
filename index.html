@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>E-Absensi Pegawai</title>
+    <title>E-Absensi Pegawai Modern</title>
     
     <!-- PWA Setup -->
     <link rel="manifest" href="manifest.json">
@@ -19,13 +19,10 @@
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); }
         
-        /* Animasi */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -34,30 +31,28 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-blue-200">
 
-    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <!-- HEADER NAVIGATION -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 shadow-sm">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex justify-between items-center">
-            <!-- Logo -->
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+                <div class="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
                     <i class="fa-solid fa-location-dot text-lg"></i>
                 </div>
                 <div>
                     <h1 class="font-extrabold text-lg text-slate-800 leading-tight tracking-tight">Geo<span class="text-blue-600">Absen</span></h1>
-                    <span class="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Portal Karyawan</span>
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portal Karyawan</span>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
-                <!-- Tombol Install PWA -->
-                <button id="btn-install-pwa" class="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold px-4 py-2 rounded-lg transition border border-blue-200 shadow-sm">
-                    <i class="fa-solid fa-mobile-screen-button"></i> <span class="hidden sm:inline">Unduh Aplikasi</span><span class="sm:hidden">Unduh</span>
+                <button id="btn-install-pwa" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-md shadow-blue-600/20 active:scale-95">
+                    <i class="fa-solid fa-download"></i> <span class="hidden sm:inline">Unduh App</span><span class="sm:hidden">App</span>
                 </button>
 
-                <!-- Info User Login -->
-                <div id="user-info" class="hidden items-center gap-3 bg-slate-50 p-1.5 pl-4 rounded-full border border-slate-200">
+                <div id="user-info" class="hidden items-center gap-3 bg-slate-100 p-1.5 pl-4 rounded-full border border-slate-200">
                     <div class="text-right hidden sm:block">
-                        <div id="display-name" class="text-xs font-bold text-slate-700 leading-tight"></div>
-                        <div id="display-role" class="text-[10px] text-blue-600 font-bold uppercase tracking-wider"></div>
+                        <div id="display-name" class="text-xs font-bold text-slate-800 leading-tight"></div>
+                        <div id="display-role" class="text-[10px] text-blue-600 font-extrabold uppercase tracking-wider"></div>
                     </div>
                     <button id="btn-logout" class="bg-white hover:bg-rose-50 text-rose-500 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition border border-slate-200" title="Keluar">
                         <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
@@ -67,221 +62,259 @@
         </div>
     </header>
 
+    <!-- MAIN CONTENT AREA -->
     <main class="flex-grow flex items-center justify-center p-4 sm:p-6 w-full max-w-6xl mx-auto">
         
-        <!-- BAGIAN LOGIN -->
-        <section id="login-section" class="w-full max-w-md bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 animate-fade-in">
+        <!-- FORM LOGIN -->
+        <section id="login-section" class="w-full max-w-md bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 animate-fade-in">
             <div class="text-center mb-8">
-                <div class="inline-flex p-4 rounded-2xl bg-blue-50 text-blue-600 mb-4">
+                <div class="inline-flex p-4 rounded-2xl bg-blue-50 text-blue-600 mb-4 shadow-inner">
                     <i class="fa-solid fa-fingerprint text-4xl"></i>
                 </div>
-                <h2 class="text-2xl font-extrabold text-slate-800">Selamat Datang</h2>
-                <p class="text-slate-500 text-sm mt-2">Silakan masukkan NIK Anda untuk mengakses sistem absensi.</p>
+                <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Selamat Datang</h2>
+                <p class="text-slate-500 text-xs mt-2 font-medium">Masukkan NIK Anda untuk mengakses portal absensi.</p>
             </div>
 
             <form id="login-form" class="space-y-5">
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Nomor Induk Karyawan (NIK)</label>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Nomor Induk Karyawan (NIK)</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
                             <i class="fa-regular fa-id-card"></i>
                         </span>
                         <input type="text" id="login-nik" required placeholder="Contoh: 1001" 
-                               class="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm font-semibold outline-none">
+                               class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm font-semibold outline-none">
                     </div>
                 </div>
                 
-                <button type="submit" id="btn-login" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex justify-center items-center gap-2 text-sm">
+                <button type="submit" id="btn-login" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-600/25 transition-all flex justify-center items-center gap-2 text-sm">
                     <span>Masuk Aplikasi</span>
-                    <i class="fa-solid fa-arrow-right"></i>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
                 </button>
                 
                 <div id="login-error" class="text-rose-500 text-xs font-semibold text-center hidden p-3 bg-rose-50 rounded-xl border border-rose-100"></div>
             </form>
         </section>
 
-        <!-- BAGIAN DASHBOARD PEGAWAI -->
-        <section id="employee-section" class="hidden w-full max-w-lg bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 animate-fade-in">
+        <!-- DASHBOARD PEGAWAI (ABSENSI) -->
+        <section id="employee-section" class="hidden w-full max-w-lg bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 animate-fade-in">
             <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
                 <div>
-                    <h3 class="text-lg font-extrabold text-slate-800">Formulir Kehadiran</h3>
-                    <p class="text-xs text-slate-500 font-medium">Catat waktu masuk & pulang Anda.</p>
+                    <h3 class="text-lg font-extrabold text-slate-800">Presensi Kehadiran</h3>
+                    <p class="text-xs text-slate-500 font-medium">Batas maksimal 1x absen per kategori/hari.</p>
                 </div>
-                <div id="live-clock" class="text-sm font-bold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 tracking-wider">
+                <div id="live-clock" class="text-xs font-extrabold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 tracking-wider">
                     00:00:00
                 </div>
             </div>
             
             <!-- Banner Status GPS -->
-            <div id="location-banner" class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-xs flex items-start gap-3 transition-colors">
-                <div id="location-icon-wrapper" class="p-2 rounded-lg bg-amber-100 text-amber-600 shrink-0">
+            <div id="location-banner" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-xs flex items-start gap-3 transition-colors">
+                <div id="location-icon-wrapper" class="p-2 rounded-xl bg-amber-100 text-amber-600 shrink-0">
                     <i class="fa-solid fa-satellite-dish text-base animate-pulse"></i>
                 </div>
                 <div class="flex-grow pt-0.5">
-                    <span class="font-bold block mb-1 text-slate-700">Status Titik Lokasi</span>
-                    <span id="location-status" class="text-amber-700 font-medium">Mencari koordinat GPS Anda...</span>
+                    <span class="font-bold block mb-0.5 text-slate-800">Status Titik GPS</span>
+                    <span id="location-status" class="text-amber-700 font-medium leading-relaxed">Mencari posisi koordinat Anda...</span>
                 </div>
             </div>
 
-            <!-- Kamera Selfie -->
+            <!-- Preview Kamera Selfie -->
             <div id="camera-wrapper" class="mb-6">
-                <div class="relative w-full h-56 sm:h-64 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center">
+                <div class="relative w-full h-56 sm:h-64 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shadow-inner">
                     <video id="video" autoplay playsinline class="w-full h-full object-cover hidden transform scale-x-[-1]"></video>
                     <canvas id="canvas" class="hidden"></canvas>
                     
                     <div id="camera-placeholder" class="text-slate-400 text-center flex flex-col items-center p-6">
-                        <div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center mb-3 text-slate-500">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-200/70 flex items-center justify-center mb-3 text-slate-500">
                             <i class="fa-solid fa-camera text-xl"></i>
                         </div>
-                        <p class="text-xs font-medium">Kamera Sedang Disiapkan...</p>
-                        <button id="btn-start-camera" class="mt-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition hidden">Coba Hidupkan Kamera</button>
+                        <p class="text-xs font-bold text-slate-600">Menyiapkan Kamera Selfie...</p>
+                        <button id="btn-start-camera" class="mt-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition hidden">Coba Aktifkan Kamera</button>
                     </div>
 
-                    <div id="live-badge" class="hidden absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded text-[10px] font-bold tracking-wider items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> LIVE
+                    <div id="live-badge" class="hidden absolute top-3 left-3 bg-slate-900/70 backdrop-blur-md text-white px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wider items-center gap-1.5 border border-white/20">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> LIVE CAM
                     </div>
                 </div>
             </div>
 
-            <!-- Form Pilihan Absen -->
+            <!-- Form Absensi -->
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Pilih Jenis Absen</label>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Pilih Jenis Absensi</label>
                     <div class="relative">
-                        <select id="absen-type" class="w-full pl-4 pr-10 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer transition">
+                        <select id="absen-type" class="w-full pl-4 pr-10 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer transition text-xs sm:text-sm">
                             <option value="MASUK">✅ Absen Masuk (Clock In)</option>
                             <option value="KELUAR">🏃 Absen Pulang (Clock Out)</option>
-                            <option value="TIDAK_HADIR">📝 Izin / Sakit / Cuti</option>
+                            <option value="TIDAK_HADIR">📝 Pengajuan Izin / Cuti / Sakit</option>
                         </select>
-                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
                     </div>
                 </div>
 
                 <div id="keterangan-container" class="hidden animate-fade-in">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Keterangan Izin <span class="text-rose-500">*Wajib</span></label>
-                    <textarea id="absen-keterangan" rows="2" placeholder="Sebutkan alasan dengan jelas..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"></textarea>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Keterangan Izin/Cuti <span class="text-rose-500">*Wajib</span></label>
+                    <textarea id="absen-keterangan" rows="2" placeholder="Tuliskan alasan izin/cuti secara singkat..." class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-xs sm:text-sm font-medium"></textarea>
                 </div>
 
-                <button id="btn-absen" disabled class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-4 px-4 rounded-xl shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed flex justify-center items-center gap-2 text-sm mt-2">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    <span>Kirim Data Kehadiran</span>
+                <button id="btn-absen" disabled class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-4 px-4 rounded-2xl shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed flex justify-center items-center gap-2 text-sm mt-2">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                    <span>Kirim Data Absensi</span>
                 </button>
             </div>
             
-            <!-- Alert Notifikasi Berhasil/Gagal -->
-            <div id="absen-message" class="text-center text-xs font-bold mt-4 hidden p-3.5 rounded-xl border animate-fade-in"></div>
+            <div id="absen-message" class="text-center text-xs font-bold mt-4 hidden p-4 rounded-2xl border animate-fade-in"></div>
         </section>
 
-        <!-- BAGIAN DASHBOARD SUPERADMIN -->
-        <section id="admin-section" class="hidden w-full bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 animate-fade-in">
+        <!-- DASHBOARD SUPERADMIN -->
+        <section id="admin-section" class="hidden w-full bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 animate-fade-in">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-100 gap-4">
                 <div>
                     <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-shield-check text-blue-600"></i> Panel Administrator
+                        <i class="fa-solid fa-shield-halved text-blue-600"></i> Panel Operator Admin
                     </h3>
-                    <p class="text-xs text-slate-500 mt-1 font-medium">Kelola database pegawai & laporan kehadiran.</p>
+                    <p class="text-xs text-slate-500 mt-1 font-medium">Kelola database pegawai & cetak laporan kehadiran.</p>
                 </div>
                 
-                <!-- Tab Menu -->
-                <div class="flex p-1 bg-slate-100 rounded-xl border border-slate-200 w-full md:w-auto">
-                    <button id="tab-pegawai" class="flex-1 md:flex-none px-5 py-2.5 bg-white text-blue-600 rounded-lg font-bold text-xs shadow-sm transition">Data Pegawai</button>
-                    <button id="tab-laporan" class="flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-lg font-bold text-xs transition">Laporan Absensi</button>
+                <div class="flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80 w-full md:w-auto">
+                    <button id="tab-pegawai" class="flex-1 md:flex-none px-5 py-2.5 bg-white text-blue-600 rounded-xl font-bold text-xs shadow-sm transition">Kelola Pegawai</button>
+                    <button id="tab-laporan" class="flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-xl font-bold text-xs transition">Laporan Presensi</button>
                 </div>
             </div>
 
-            <!-- TAB 1: KELOLA PEGAWAI -->
+            <!-- TAB 1: KELOLA DATA PEGAWAI -->
             <div id="panel-pegawai" class="space-y-4 animate-fade-in">
                 <div class="flex justify-between items-center">
-                    <h4 class="font-bold text-sm text-slate-700"><i class="fa-solid fa-users mr-1"></i> Daftar Karyawan</h4>
-                    <button id="btn-tambah-pegawai" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-xs font-bold transition border border-blue-200 flex items-center gap-2">
-                        <i class="fa-solid fa-plus"></i> Tambah
+                    <h4 class="font-bold text-sm text-slate-800"><i class="fa-solid fa-users text-blue-600 mr-1.5"></i> Data Master Karyawan</h4>
+                    <button id="btn-tambah-pegawai" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-plus text-xs"></i> Tambah Pegawai
                     </button>
                 </div>
                 
-                <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white">
+                <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm">
                     <table class="w-full text-xs text-left whitespace-nowrap">
-                        <thead class="text-[11px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                        <thead class="text-[11px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200 font-extrabold">
                             <tr>
-                                <th class="px-5 py-3.5 font-bold">NIK</th>
-                                <th class="px-5 py-3.5 font-bold">Nama Lengkap</th>
-                                <th class="px-5 py-3.5 font-bold">Hak Akses</th>
-                                <th class="px-5 py-3.5 font-bold text-right">Tindakan</th>
+                                <th class="px-5 py-3.5">NIK</th>
+                                <th class="px-5 py-3.5">Nama Lengkap</th>
+                                <th class="px-5 py-3.5">Hak Akses</th>
+                                <th class="px-5 py-3.5 text-right">Tindakan</th>
                             </tr>
                         </thead>
-                        <tbody id="table-pegawai-body" class="divide-y divide-slate-100 text-slate-700 font-medium">
-                            <tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Memuat data...</td></tr>
+                        <tbody id="table-pegawai-body" class="divide-y divide-slate-100 text-slate-700">
+                            <tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Memuat data karyawan...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- TAB 2: LAPORAN ABSENSI -->
-            <div id="panel-laporan" class="hidden space-y-4 animate-fade-in">
-                <div class="flex flex-col sm:flex-row justify-between items-end gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <!-- TAB 2: LAPORAN PRESENSI REKAPITULASI -->
+            <div id="panel-laporan" class="hidden space-y-6 animate-fade-in">
+                
+                <!-- Filter Bar -->
+                <div class="flex flex-col sm:flex-row justify-between items-end gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
                     <div class="flex items-end gap-3 w-full sm:w-auto">
                         <div class="w-full sm:w-auto">
-                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Tanggal</label>
-                            <input type="date" id="filter-date" class="w-full sm:w-auto border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 bg-white outline-none focus:border-blue-500">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Tanggal Presensi</label>
+                            <input type="date" id="filter-date" class="w-full sm:w-auto border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-700 bg-white outline-none focus:border-blue-500 transition">
                         </div>
-                        <button id="btn-filter" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-lg text-xs font-bold transition shadow-sm h-[36px]">
-                            Cari
+                        <button id="btn-filter" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm h-[36px]">
+                            Tampilkan
                         </button>
                     </div>
-                    <button id="btn-print" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 h-[36px]">
-                        <i class="fa-solid fa-print"></i> Cetak Laporan
+                    <button id="btn-print" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 h-[36px]">
+                        <i class="fa-solid fa-print text-xs"></i> Cetak Laporan
                     </button>
                 </div>
 
-                <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white" id="print-area">
+                <!-- Summary Cards Status -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-blue-50/50 border border-blue-100 p-4 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-blue-600 uppercase tracking-wider">Total Presensi</span>
+                        <span id="stat-total" class="text-xl font-black text-blue-900 mt-1 block">0</span>
+                    </div>
+                    <div class="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Absen Masuk</span>
+                        <span id="stat-masuk" class="text-xl font-black text-emerald-900 mt-1 block">0</span>
+                    </div>
+                    <div class="bg-amber-50/50 border border-amber-100 p-4 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-amber-600 uppercase tracking-wider">Absen Pulang</span>
+                        <span id="stat-keluar" class="text-xl font-black text-amber-900 mt-1 block">0</span>
+                    </div>
+                    <div class="bg-purple-50/50 border border-purple-100 p-4 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-purple-600 uppercase tracking-wider">Izin / Cuti</span>
+                        <span id="stat-izin" class="text-xl font-black text-purple-900 mt-1 block">0</span>
+                    </div>
+                </div>
+
+                <!-- Area Cetak Laporan Resmi -->
+                <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm" id="print-area">
+                    
                     <!-- Header Khusus Print -->
                     <div class="p-6 border-b border-slate-200 hidden print-show">
-                        <h2 class="text-xl font-bold text-slate-800">Laporan Kehadiran Karyawan</h2>
-                        <p class="text-sm text-slate-600 mt-1" id="print-date-info"></p>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Laporan Kehadiran Karyawan</h2>
+                                <p class="text-xs text-slate-600 mt-1 font-semibold" id="print-date-info"></p>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-extrabold text-blue-600 text-lg">GeoAbsen</span>
+                                <span class="block text-[9px] text-slate-400 font-bold uppercase">Dokumen Resmi Kantor</span>
+                            </div>
+                        </div>
                     </div>
                     
                     <table class="w-full text-xs text-left whitespace-nowrap">
-                        <thead class="text-[11px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                        <thead class="text-[11px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200 font-extrabold">
                             <tr>
-                                <th class="px-5 py-3.5 font-bold">Waktu</th>
-                                <th class="px-5 py-3.5 font-bold">NIK</th>
-                                <th class="px-5 py-3.5 font-bold">Nama</th>
-                                <th class="px-5 py-3.5 font-bold">Status</th>
-                                <th class="px-5 py-3.5 font-bold">Jarak</th>
-                                <th class="px-5 py-3.5 font-bold">Keterangan</th>
-                                <th class="px-5 py-3.5 font-bold">Bukti Foto</th>
+                                <th class="px-5 py-3.5">Waktu</th>
+                                <th class="px-5 py-3.5">NIK</th>
+                                <th class="px-5 py-3.5">Nama Pegawai</th>
+                                <th class="px-5 py-3.5">Jenis Presensi</th>
+                                <th class="px-5 py-3.5">Jarak Radius</th>
+                                <th class="px-5 py-3.5">Keterangan</th>
+                                <th class="px-5 py-3.5">Bukti Foto</th>
                             </tr>
                         </thead>
-                        <tbody id="table-laporan-body" class="divide-y divide-slate-100 text-slate-700 font-medium">
-                            <tr><td colspan="7" class="px-5 py-8 text-center text-slate-400">Pilih tanggal dan klik "Cari" untuk melihat data.</td></tr>
+                        <tbody id="table-laporan-body" class="divide-y divide-slate-100 text-slate-700">
+                            <tr><td colspan="7" class="px-5 py-8 text-center text-slate-400 font-medium">Pilih tanggal lalu klik "Tampilkan" untuk melihat laporan.</td></tr>
                         </tbody>
                     </table>
+
+                    <!-- Tanda Tangan Khusus Print -->
+                    <div class="p-8 hidden print-show border-t border-slate-100 mt-8">
+                        <div class="flex justify-end">
+                            <div class="text-center w-48">
+                                <p class="text-xs text-slate-600 mb-16">Penanggung Jawab / Admin,</p>
+                                <p class="text-xs font-bold text-slate-800 underline">( .................................... )</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
         
     </main>
 
-    
-    <!-- Modal Loading Global -->
+    <!-- Overlay Loading Global -->
     <div id="loading-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden flex flex-col items-center justify-center p-4">
-        <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-2xl flex flex-col items-center max-w-xs w-full animate-fade-in">
-            <div class="w-12 h-12 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-            <p id="loading-text" class="text-slate-700 font-bold text-sm text-center">Harap Tunggu...</p>
+        <div class="bg-white border border-slate-200 p-6 rounded-3xl shadow-2xl flex flex-col items-center max-w-xs w-full animate-fade-in">
+            <div class="w-10 h-10 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <p id="loading-text" class="text-slate-800 font-bold text-xs text-center">Harap Tunggu...</p>
         </div>
     </div>
 
-    <!-- Modal Pemasangan PWA (Fallback Tutorial) -->
+    <!-- Modal Panduan PWA -->
     <div id="modal-install" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center animate-fade-in">
-            <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4 text-2xl">
+            <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
                 <i class="fa-solid fa-cloud-arrow-down"></i>
             </div>
-            <h3 class="text-lg font-bold text-slate-800 mb-2">Instal Aplikasi ke HP</h3>
-            <p class="text-sm text-slate-500 mb-5 leading-relaxed">Akses absensi lebih cepat langsung dari layar utama HP Anda.</p>
-            <div id="install-instructions" class="text-left bg-slate-50 p-4 rounded-xl text-xs text-slate-700 mb-5 space-y-2 border border-slate-200 font-medium">
-                <!-- Konten dinamis disisipkan via JS -->
-            </div>
-            <button id="btn-close-install-modal" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition">Tutup Panduan</button>
+            <h3 class="text-lg font-extrabold text-slate-800 mb-1">Unduh Aplikasi HP</h3>
+            <p class="text-xs text-slate-500 mb-5 leading-relaxed">Pasang aplikasi di layar utama HP Anda agar akses lebih praktis.</p>
+            <div id="install-instructions" class="text-left bg-slate-50 p-4 rounded-2xl text-xs text-slate-700 mb-5 border border-slate-200 font-medium"></div>
+            <button id="btn-close-install-modal" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-2xl text-xs transition">Tutup Panduan</button>
         </div>
     </div>
 
@@ -289,48 +322,48 @@
     <div id="modal-pegawai" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative animate-fade-in">
             <button id="btn-close-modal" class="absolute top-5 right-5 text-slate-400 hover:text-rose-500 bg-slate-50 hover:bg-rose-50 w-8 h-8 rounded-full flex items-center justify-center transition">
-                <i class="fa-solid fa-times text-sm"></i>
+                <i class="fa-solid fa-times text-xs"></i>
             </button>
-            <h3 class="text-lg font-extrabold text-slate-800 mb-4 pb-3 border-b border-slate-100" id="modal-title">Tambah Karyawan Baru</h3>
+            <h3 class="text-base font-extrabold text-slate-800 mb-4 pb-3 border-b border-slate-100" id="modal-title">Tambah Pegawai Baru</h3>
             <form id="form-pegawai" class="space-y-4">
                 <input type="hidden" id="form-mode" value="add">
                 <input type="hidden" id="original-nik" value="">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">NIK (Username Login)</label>
-                    <input type="text" id="pegawai-nik" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-sm font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">NIK (Username Login)</label>
+                    <input type="text" id="pegawai-nik" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Nama Lengkap</label>
-                    <input type="text" id="pegawai-nama" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-sm font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Nama Lengkap</label>
+                    <input type="text" id="pegawai-nama" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Hak Akses (Role)</label>
-                    <select id="pegawai-role" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="PEGAWAI">PEGAWAI (Hanya Absen)</option>
-                        <option value="SUPERADMIN">SUPERADMIN (Kelola Data)</option>
+                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Hak Akses (Role)</label>
+                    <select id="pegawai-role" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="PEGAWAI">PEGAWAI (Khusus Absensi)</option>
+                        <option value="SUPERADMIN">SUPERADMIN (Operator Data)</option>
                     </select>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/20 text-sm transition mt-2">Simpan Data</button>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/20 text-xs transition mt-2">Simpan Data Pegawai</button>
             </form>
         </div>
     </div>
 
-    <!-- Script Utama Aplikasi Terpisah di File app.js -->
+    <!-- Script Utama Aplikasi -->
     <script src="app.js"></script>
 
-    <!-- Khusus Stylesheet untuk Fitur Cetak (Print) -->
+    <!-- CSS khusus untuk Mode Cetak/Print Laporan -->
     <style>
         @media print {
-            body { background: white !important; }
+            body { background: white !important; color: black !important; }
             body * { visibility: hidden; }
-            header, #tab-pegawai, #tab-laporan, #btn-filter, #btn-print, #filter-date, label { display: none !important; }
+            header, #tab-pegawai, #tab-laporan, #btn-filter, #btn-print, #filter-date, label, .grid { display: none !important; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; border: none !important; box-shadow: none !important;}
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; border: none !important; box-shadow: none !important; }
             .print-show { display: block !important; }
             #admin-section { box-shadow: none !important; padding: 0 !important; border: none !important; }
-            table { border-collapse: collapse; width: 100%; }
-            th, td { border: 1px solid #e2e8f0; padding: 8px; color: black; }
-            th { background-color: #f8fafc; font-weight: bold; }
+            table { border-collapse: collapse; width: 100%; font-size: 10px !important; }
+            th, td { border: 1px solid #cbd5e1 !important; padding: 6px 10px !important; color: black !important; }
+            th { background-color: #f8fafc !important; font-weight: bold; }
         }
     </style>
 </body>
