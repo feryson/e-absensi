@@ -392,24 +392,11 @@ async function loadDataPegawaiAdmin() {
                 <td class="px-5 py-3.5 font-bold">${p.nik}</td>
                 <td class="px-5 py-3.5">${p.nama}</td>
                 <td class="px-5 py-3.5"><span class="px-2 bg-blue-100 text-blue-700 rounded">${p.role}</span></td>
-                <td class="px-5 py-3.5 text-right"><button onclick="hapusPegawai('${p.nik}')" class="text-rose-500">Hapus</button></td>
+                <td class="px-5 py-3.5 text-right"><button onclick="hapusPegawai('${p.nik}')" class="text-rose-500 font-bold hover:text-rose-700 transition">Hapus</button></td>
             `;
             tbody.appendChild(tr);
         });
     } catch (e) { tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-rose-500 font-bold">Gagal memuat</td></tr>'; }
-}
-
-// MEMPERBAIKI TOMBOL CETAK DOKUMEN (PRINT)
-const btnPrint = document.getElementById('btn-print');
-if (btnPrint) {
-    btnPrint.addEventListener('click', () => {
-        const tgl = document.getElementById('filter-date').value;
-        const printInfo = document.getElementById('print-date-info');
-        if (printInfo) {
-            printInfo.textContent = tgl ? `Tanggal Presensi: ${tgl}` : `Semua Data Presensi`;
-        }
-        window.print();
-    });
 }
 
 window.hapusPegawai = async function(nik) {
@@ -452,11 +439,13 @@ document.getElementById('btn-filter').addEventListener('click', async () => {
     let fValue = '';
     let printTitle = '';
     
-    // Validasi input dan pembentukan Judul Cetak
+    // Validasi input dan pembentukan Judul Cetak yang Rapih
     if(fType === 'daily') {
         fValue = document.getElementById('filter-date').value;
         if(!fValue) return alert("Pilih tanggal terlebih dahulu!");
-        printTitle = `TANGGAL: ${fValue.split('-').reverse().join('/')}`;
+        // Format YYYY-MM-DD ke DD/MM/YYYY
+        const dateParts = fValue.split('-');
+        printTitle = `TANGGAL: ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
     } else if (fType === 'monthly') {
         fValue = document.getElementById('filter-month').value;
         if(!fValue) return alert("Pilih bulan dan tahun terlebih dahulu!");
@@ -475,7 +464,7 @@ document.getElementById('btn-filter').addEventListener('click', async () => {
     const tbody = document.getElementById('table-laporan-body');
     const tbodyPrint = document.getElementById('print-table-body');
     
-    tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">Memuat laporan...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400 font-medium">Memuat laporan... <i class="fa-solid fa-spinner fa-spin ml-2"></i></td></tr>';
     
     try {
         const data = await fetchBackend('getLaporan', [fValue, fType]);
@@ -483,32 +472,40 @@ document.getElementById('btn-filter').addEventListener('click', async () => {
         if(tbodyPrint) tbodyPrint.innerHTML = '';
         
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">Tidak ada data untuk periode ini.</td></tr>';
-            if(tbodyPrint) tbodyPrint.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-black">Tidak ada data</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400 font-medium">Tidak ada data untuk periode ini.</td></tr>';
+            if(tbodyPrint) tbodyPrint.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-black">Tidak ada data ditemukan untuk periode ini.</td></tr>';
             return;
         }
 
         data.forEach((d, index) => {
-            // Render Tabel Tampilan UI Layar
+            // Render Tabel Tampilan UI Layar (Modern)
             const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50/50 transition-colors";
+            
+            // Pewarnaan Badge Tipe Kehadiran
+            let badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600">${d.tipe}</span>`;
+            if(d.tipe === 'MASUK') badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> MASUK</span>`;
+            if(d.tipe === 'KELUAR') badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> KELUAR</span>`;
+            if(d.tipe === 'TIDAK_HADIR') badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700"><i class="fa-solid fa-file-signature mr-1"></i> IZIN/CUTI</span>`;
+
             tr.innerHTML = `
-                <td class="px-5 py-3.5"><span class="font-bold text-slate-700">${d.tanggal}</span> <br> <span class="text-[10px] text-slate-500">${d.waktu}</span></td>
-                <td class="px-5 py-3.5">${d.nik}</td>
-                <td class="px-5 py-3.5 font-bold">${d.nama}</td>
-                <td class="px-5 py-3.5 text-blue-600 font-bold">${d.tipe}</td>
-                <td class="px-5 py-3.5">${d.jarak ? d.jarak + 'm' : '-'}</td>
-                <td class="px-5 py-3.5">${d.keterangan || '-'}</td>
+                <td class="px-5 py-3.5"><span class="font-bold text-slate-800">${d.tanggal}</span> <br> <span class="text-[10px] text-slate-500 font-medium"><i class="fa-regular fa-clock mr-1"></i>${d.waktu}</span></td>
+                <td class="px-5 py-3.5 font-medium text-slate-600">${d.nik}</td>
+                <td class="px-5 py-3.5 font-bold text-slate-800">${d.nama}</td>
+                <td class="px-5 py-3.5">${badgeType}</td>
+                <td class="px-5 py-3.5 text-slate-600 font-medium">${d.jarak ? d.jarak + ' m' : '-'}</td>
+                <td class="px-5 py-3.5 text-xs text-slate-500 max-w-[200px] truncate" title="${d.keterangan || '-'}">${d.keterangan || '-'}</td>
             `;
             tbody.appendChild(tr);
             
-            // Render Tabel Khusus Area Cetak/Print
+            // Render Tabel Khusus Area Cetak/Print (Formal Document)
             if(tbodyPrint) {
                 const trPrint = document.createElement('tr');
                 trPrint.innerHTML = `
                     <td class="text-center">${index + 1}</td>
-                    <td class="text-center font-bold">${d.tanggal}<br><span style="font-weight:normal">${d.waktu}</span></td>
+                    <td class="text-center"><b>${d.tanggal}</b><br><span style="font-size: 10px; color: #555;">${d.waktu}</span></td>
                     <td class="text-center">${d.nik}</td>
-                    <td class="font-bold">${d.nama}</td>
+                    <td><b>${d.nama}</b></td>
                     <td class="text-center">${d.tipe}</td>
                     <td class="text-center">${d.jarak ? d.jarak + 'm' : '-'}</td>
                     <td>${d.keterangan || '-'}</td>
@@ -517,19 +514,25 @@ document.getElementById('btn-filter').addEventListener('click', async () => {
             }
         });
     } catch (e) { 
-        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-rose-500">Error memuat data</td></tr>'; 
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-rose-500 font-bold"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Error memuat data. Coba lagi.</td></tr>'; 
     }
 });
 
-const btnPrint = document.getElementById('btn-print');
-if (btnPrint) {
-    btnPrint.addEventListener('click', () => {
+// SINGLE EVENT LISTENER UNTUK CETAK (Memperbaiki Bug Duplikasi)
+const btnPrintDoc = document.getElementById('btn-print');
+if (btnPrintDoc) {
+    btnPrintDoc.addEventListener('click', () => {
         const printInfo = document.getElementById('print-date-info');
         const signatureDate = document.getElementById('print-date-signature');
         
-        // Memasukkan Judul Laporan yang sesuai dengan filter
+        // Memasukkan Judul Laporan yang sesuai dengan filter terakhir
         if (printInfo) {
-            printInfo.textContent = window.currentPrintTitle ? `PERIODE ${window.currentPrintTitle}` : 'PILIH FILTER TERLEBIH DAHULU';
+            if(window.currentPrintTitle) {
+                printInfo.textContent = `PERIODE ${window.currentPrintTitle}`;
+            } else {
+                alert("Silakan klik 'Tampilkan' terlebih dahulu untuk menyaring data yang akan dicetak.");
+                return; // Jangan print jika data belum difilter
+            }
         }
         
         // Auto Update Tanggal Tanda Tangan ke Hari Ini
@@ -539,7 +542,7 @@ if (btnPrint) {
             signatureDate.textContent = `Jakarta, ${today.getDate()} ${monthNames[today.getMonth()]} ${today.getFullYear()}`;
         }
         
-        // Eksekusi print browser
+        // Trigger print browser
         window.print();
     });
 }
