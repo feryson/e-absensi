@@ -1,7 +1,7 @@
 // --- KONFIGURASI APLIKASI ---
-const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbycd5NpVq5VBgUrbNoCiA5pmL-lnn1ot8X3KpQgPiDO-MC2pP7Ki0cslUN7kxVeMb2rVg/exec"; // PASTE URL WEB APP APPS SCRIPT DI SINI
-const KANTOR_LAT = -5.300456628608312;
-const KANTOR_LNG = 105.03455748021706;
+const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxWaYwu_U4ArudDpQtRjWDV1gSoBQGvNyMuWiCcsdPK2LitUKruR2mZKsm12WRFQxx2_g/exec"; // PASTE URL WEB APP APPS SCRIPT DI SINI
+const KANTOR_LAT = -5.300651890054125;
+const KANTOR_LNG = 105.03454645519633;
 const MAKSIMAL_RADIUS_METER = 30; // Radius Maksimal
 
 // Variabel State
@@ -53,30 +53,13 @@ window.addEventListener('load', () => {
     }
 });
 
-// MENCEGAH PULL-TO-REFRESH DI HP (Layar ketarik)
+// MENCEGAH PULL-TO-REFRESH DI HP
 document.addEventListener('touchmove', function(event) {
-    // Hanya izinkan scroll pada elemen tabel atau container yang secara spesifik boleh di-scroll
     const isScrollable = event.target.closest('.overflow-x-auto') || event.target.closest('.overflow-y-auto');
     if (!isScrollable) {
         event.preventDefault();
     }
 }, { passive: false });
-
-// PWA Install Prompt
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-});
-
-dom.btnInstallPwa.addEventListener('click', async () => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') deferredPrompt = null;
-    } else {
-        alert("Aplikasi bisa diinstal via menu browser (Tambahkan ke Layar Utama/Add to Home Screen).");
-    }
-});
 
 // Loader Helper
 function toggleLoading(show, message = 'Memproses...') {
@@ -96,19 +79,35 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))));
 }
 
-// Bridge API Cepat
+// Bridge API Cepat dengan Timeout Handler (Anti Freeze)
 async function fetchBackend(action, params = []) {
     return new Promise((resolve, reject) => {
         if (!URL_APPS_SCRIPT) return reject(new Error("URL Apps Script belum diisi!"));
         const payloadData = { action: action, parameters: params };
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 detik timeout
+
         fetch(URL_APPS_SCRIPT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ payload: JSON.stringify(payloadData) })
+            body: new URLSearchParams({ payload: JSON.stringify(payloadData) }),
+            signal: controller.signal
         })
-        .then(res => res.json())
+        .then(res => {
+            clearTimeout(timeoutId);
+            if (!res.ok) throw new Error("Server error " + res.status);
+            return res.json();
+        })
         .then(resolve)
-        .catch(() => reject(new Error("Koneksi gagal. Cek internet Anda.")));
+        .catch(err => {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                reject(new Error("Koneksi timeout. Periksa internet Anda."));
+            } else {
+                reject(new Error("Koneksi gagal. Cek URL Apps Script / internet Anda."));
+            }
+        });
     });
 }
 
@@ -153,396 +152,163 @@ function renderDashboardBerdasarkanRole() {
         loadDataPegawaiAdmin();
     } else {
         dom.secEmployee.classList.remove('hidden');
-        inisialisasiGPS();
-        inisialisasiKamera();
-        cekStatusHariIni(); // <--- LOGIKA BARU PEMANGGILAN STATUS
+        cekStatusHariIni();
     }
 }
 
-// --- LOGIKA BARU: MENGATUR DROPDOWN BERDASARKAN STATUS HARI INI ---
-async function cekStatusHariIni() {
-    toggleLoading(true, 'Mengecek status absen...');
-    try {
-        const res = await fetchBackend('checkStatus', [currentUser.nik]);
-        if(res.success) {
-            aturDropdownBerdasarkanStatus(res.data);
-        }
-    } catch(e) {
-        console.error(e);
-        dom.selType.innerHTML = '<option value="">⚠️ Gagal memuat status absen</option>';
-    } finally {
-        toggleLoading(false);
-    }
-}
+let pegawaiCache = null;
 
-function aturDropdownBerdasarkanStatus(status) {
-    dom.selType.innerHTML = '';
-    
-    if (status.izin) {
-        dom.selType.innerHTML = '<option value="">✅ Anda sedang Izin/Cuti hari ini.</option>';
-        dom.selType.disabled = true;
-        dom.btnAbsen.disabled = true;
-    } else if (status.masuk && status.keluar) {
-        dom.selType.innerHTML = '<option value="">✅ Anda sudah selesai absen pulang hari ini.</option>';
-        dom.selType.disabled = true;
-        dom.btnAbsen.disabled = true;
-    } else if (status.masuk) {
-        // HANYA BISA KELUAR JIKA SUDAH MASUK
-        dom.selType.innerHTML = '<option value="KELUAR">🏃 Absen Pulang (Clock Out)</option>';
-        dom.selType.disabled = false;
-    } else {
-        // DEFAULT JIKA BELUM ABSEN (Wajib Masuk Dulu)
-        dom.selType.innerHTML = `
-            <option value="">-- Pilih Jenis Kehadiran --</option>
-            <option value="MASUK">✅ Absen Masuk (Clock In)</option>
-            <option value="TIDAK_HADIR">📝 Pengajuan Izin / Cuti / Sakit</option>
-        `;
-        dom.selType.disabled = false;
-    }
-    validasiStatusAbsensi(); // Cek ulang form & tombol
-}
-
-dom.btnLogout.addEventListener('click', () => {
-    sessionStorage.removeItem('e_absensi_session');
-    location.reload(); // Hard refresh untuk membersihkan semua memori UI
-});
-
-// Jam Digital Live
-setInterval(() => {
-    const elJam = document.getElementById('live-clock');
-    if (elJam) elJam.textContent = new Date().toLocaleTimeString('id-ID');
-}, 1000);
-
-// Inisialisasi GPS Realtime
-function inisialisasiGPS() {
-    if (!navigator.geolocation) {
-        ubahStatusLokasi('error', 'Browser Anda tidak mendukung lokasi.');
-        return;
-    }
-    navigator.geolocation.watchPosition(
-        (pos) => {
-            currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            validasiStatusAbsensi();
-        },
-        (err) => ubahStatusLokasi('error', 'Izin GPS ditolak atau sinyal lemah.'),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
-    );
-}
-
-function ubahStatusLokasi(tipe, pesan) {
-    dom.statLoc.textContent = pesan;
-    if (tipe === 'success') {
-        dom.bannerLoc.className = "bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-6 text-xs flex items-start gap-3";
-        dom.iconLocWrapper.className = "p-2 rounded-xl bg-emerald-100 text-emerald-600 shrink-0";
-        dom.statLoc.className = "text-emerald-700 font-bold";
-    } else if (tipe === 'error') {
-        dom.bannerLoc.className = "bg-rose-50 border border-rose-200 rounded-2xl p-4 mb-6 text-xs flex items-start gap-3";
-        dom.iconLocWrapper.className = "p-2 rounded-xl bg-rose-100 text-rose-600 shrink-0";
-        dom.statLoc.className = "text-rose-700 font-bold";
-    } else {
-        dom.bannerLoc.className = "bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6 text-xs flex items-start gap-3";
-        dom.iconLocWrapper.className = "p-2 rounded-xl bg-blue-100 text-blue-600 shrink-0";
-        dom.statLoc.className = "text-blue-700 font-medium";
-    }
-}
-
-// Inisialisasi Kamera Depan
-async function inisialisasiKamera() {
-    dom.camPlaceholder.classList.remove('hidden');
-    dom.video.classList.add('hidden');
-    dom.btnStartCam.classList.add('hidden');
-    dom.badgeLive.classList.add('hidden');
-
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 } } });
-        dom.video.srcObject = stream;
-        dom.video.onloadedmetadata = () => {
-            dom.camPlaceholder.classList.add('hidden');
-            dom.video.classList.remove('hidden');
-            dom.badgeLive.classList.remove('hidden');
-            dom.badgeLive.classList.add('flex');
-            validasiStatusAbsensi();
-        };
-    } catch (e) {
-        dom.camPlaceholder.innerHTML = '<span class="text-rose-500 font-bold text-xs"><i class="fa-solid fa-camera-slash mb-2 block"></i>Kamera Ditolak</span>';
-        dom.btnStartCam.classList.remove('hidden');
-    }
-}
-dom.btnStartCam.addEventListener('click', inisialisasiKamera);
-
-// Validasi Form & Tombol Absen
-function validasiStatusAbsensi() {
-    const tipeAbsen = dom.selType.value;
-    const isKameraAktif = stream !== null && dom.video.srcObject !== null;
-
-    if (!tipeAbsen) {
-        dom.btnAbsen.disabled = true;
-        dom.conKet.classList.add('hidden');
-        return;
-    }
-
-    if (tipeAbsen === 'TIDAK_HADIR') {
-        dom.conKet.classList.remove('hidden');
-        ubahStatusLokasi('success', 'Mode Izin: GPS dilewati. Wajib isi keterangan & foto.');
-        dom.btnAbsen.disabled = !(dom.inpKet.value.trim().length > 0 && isKameraAktif);
-    } else {
-        dom.conKet.classList.add('hidden');
-        if (!currentLocation) { dom.btnAbsen.disabled = true; return; }
-
-        const jarak = calculateDistance(KANTOR_LAT, KANTOR_LNG, currentLocation.lat, currentLocation.lng);
-        let gpsValid = false;
-
-        if (jarak <= MAKSIMAL_RADIUS_METER) {
-            ubahStatusLokasi('success', `Anda di area kantor (Jarak: ${jarak}m).`);
-            gpsValid = true;
-        } else {
-            ubahStatusLokasi('error', `Di luar area. Jarak: ${jarak}m (Maksimal: ${MAKSIMAL_RADIUS_METER}m)`);
-            gpsValid = false;
-        }
-
-        dom.btnAbsen.disabled = !(gpsValid && isKameraAktif);
-    }
-}
-
-dom.selType.addEventListener('change', validasiStatusAbsensi);
-dom.inpKet.addEventListener('input', validasiStatusAbsensi);
-
-// Kompresi Foto Ekstra Ringan -> Cepat Sekejap
-function ambilFotoSelfie() {
-    if (!stream) return "";
-    try {
-        const ctx = dom.canvas.getContext('2d');
-        // Resolusi ringkas 320x240 dengan kualitas 0.35 untuk pengiriman secepat kilat
-        dom.canvas.width = 320;
-        dom.canvas.height = 240;
-        ctx.translate(dom.canvas.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(dom.video, 0, 0, dom.canvas.width, dom.canvas.height);
-        return dom.canvas.toDataURL('image/jpeg', 0.35); 
-    } catch(e) { return ""; }
-}
-
-// Eksekusi Absensi
-dom.btnAbsen.addEventListener('click', async () => {
-    dom.btnAbsen.disabled = true;
-    const payloadData = {
-        nik: currentUser.nik,
-        nama: currentUser.nama,
-        type: dom.selType.value,
-        lat: currentLocation ? currentLocation.lat : 0,
-        lng: currentLocation ? currentLocation.lng : 0,
-        keterangan: dom.inpKet.value.trim(),
-        photo: ambilFotoSelfie()
-    };
-
-    toggleLoading(true, 'Mengirim data ke server...');
-    dom.msgAbsen.classList.add('hidden');
-
-    try {
-        const response = await fetchBackend('submitAbsensi', [payloadData]);
-        if (response.success) {
-            dom.msgAbsen.textContent = `✅ Berhasil Disimpan! (${response.time})`;
-            dom.msgAbsen.className = "text-center text-xs font-bold mt-4 p-4 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200";
-            dom.msgAbsen.classList.remove('hidden');
-            dom.inpKet.value = '';
-            
-            // Re-check status hari ini agar opsi berubah secara instan
-            cekStatusHariIni(); 
-        } else { throw new Error(response.message); }
-    } catch (err) {
-        dom.msgAbsen.textContent = `⚠️ ${err.message}`;
-        dom.msgAbsen.className = "text-center text-xs font-bold mt-4 p-4 rounded-2xl bg-rose-50 text-rose-700 border border-rose-200";
-        dom.msgAbsen.classList.remove('hidden');
-    } finally {
-        toggleLoading(false);
-        validasiStatusAbsensi();
-    }
-});
-
-// ADMIN NAVIGASI TAB (Sama dengan Versi Sebelumnya, disingkat untuk fokus UI)
-const tabPegawai = document.getElementById('tab-pegawai');
-const tabLaporan = document.getElementById('tab-laporan');
-const panelPegawai = document.getElementById('panel-pegawai');
-const panelLaporan = document.getElementById('panel-laporan');
-
-tabPegawai.addEventListener('click', () => {
-    panelPegawai.classList.remove('hidden');
-    panelLaporan.classList.add('hidden');
-    tabPegawai.className = "flex-1 md:flex-none px-5 py-2.5 bg-white text-blue-600 rounded-xl font-bold text-xs shadow-sm transition";
-    tabLaporan.className = "flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-xl font-bold text-xs transition";
-    loadDataPegawaiAdmin();
-});
-
-tabLaporan.addEventListener('click', () => {
-    panelPegawai.classList.add('hidden');
-    panelLaporan.classList.remove('hidden');
-    tabLaporan.className = "flex-1 md:flex-none px-5 py-2.5 bg-white text-blue-600 rounded-xl font-bold text-xs shadow-sm transition";
-    tabPegawai.className = "flex-1 md:flex-none px-5 py-2.5 text-slate-500 hover:text-slate-700 rounded-xl font-bold text-xs transition";
-});
-
-async function loadDataPegawaiAdmin() {
+async function loadDataPegawaiAdmin(forceRefresh = false) {
     const tbody = document.getElementById('table-pegawai-body');
-    tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Memuat...</td></tr>';
+    if (pegawaiCache && !forceRefresh) {
+        renderTabelPegawai(pegawaiCache);
+        return;
+    }
+    
+    tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Memuat data pegawai... <i class="fa-solid fa-spinner fa-spin ml-2"></i></td></tr>';
     try {
-        const data = await fetchBackend('getPegawai', []);
-        tbody.innerHTML = '';
-        data.forEach(p => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td class="px-5 py-3.5 font-bold">${p.nik}</td>
-                <td class="px-5 py-3.5">${p.nama}</td>
-                <td class="px-5 py-3.5"><span class="px-2 bg-blue-100 text-blue-700 rounded">${p.role}</span></td>
-                <td class="px-5 py-3.5 text-right"><button onclick="hapusPegawai('${p.nik}')" class="text-rose-500 font-bold hover:text-rose-700 transition">Hapus</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
-    } catch (e) { tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-rose-500 font-bold">Gagal memuat</td></tr>'; }
+        const response = await fetchBackend('getPegawai', []);
+        const data = Array.isArray(response) ? response : (response.data || []);
+        pegawaiCache = data;
+        renderTabelPegawai(data);
+    } catch (e) { 
+        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-rose-500 font-bold">Gagal memuat data pegawai: ' + e.message + '</td></tr>'; 
+    }
+}
+
+function renderTabelPegawai(data) {
+    const tbody = document.getElementById('table-pegawai-body');
+    tbody.innerHTML = '';
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Tidak ada data pegawai.</td></tr>';
+        return;
+    }
+    data.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="px-5 py-3.5 font-bold">${p.nik}</td>
+            <td class="px-5 py-3.5">${p.nama}</td>
+            <td class="px-5 py-3.5"><span class="px-2 py-0.5 bg-blue-100 text-blue-700 font-bold rounded">${p.role}</span></td>
+            <td class="px-5 py-3.5 text-right"><button onclick="hapusPegawai('${p.nik}')" class="text-rose-500 font-bold hover:text-rose-700 transition">Hapus</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 window.hapusPegawai = async function(nik) {
     if (confirm(`Hapus NIK ${nik}?`)) {
         toggleLoading(true, 'Menghapus...');
         await fetchBackend('deletePegawai', [nik]);
+        pegawaiCache = null;
         toggleLoading(false);
-        loadDataPegawaiAdmin();
+        loadDataPegawaiAdmin(true);
     }
 };
 
-const filterTypeSelect = document.getElementById('filter-type');
-const filterDateInput = document.getElementById('filter-date');
-const filterMonthInput = document.getElementById('filter-month');
-const filterYearInput = document.getElementById('filter-year');
-const filterLabel = document.getElementById('filter-label');
-
-if(filterTypeSelect) {
-    filterTypeSelect.addEventListener('change', (e) => {
-        const val = e.target.value;
-        filterDateInput.classList.add('hidden');
-        filterMonthInput.classList.add('hidden');
-        filterYearInput.classList.add('hidden');
+const btnFilter = document.getElementById('btn-filter');
+if (btnFilter) {
+    btnFilter.addEventListener('click', async () => {
+        const fType = document.getElementById('filter-type').value;
+        let fValue = '';
+        let printTitle = '';
         
-        if(val === 'daily') {
-            filterLabel.textContent = 'Pilih Tanggal';
-            filterDateInput.classList.remove('hidden');
-        } else if (val === 'monthly') {
-            filterLabel.textContent = 'Bulan & Tahun';
-            filterMonthInput.classList.remove('hidden');
-        } else if (val === 'yearly') {
-            filterLabel.textContent = 'Tahun';
-            filterYearInput.classList.remove('hidden');
+        if(fType === 'daily') {
+            fValue = document.getElementById('filter-date').value;
+            if(!fValue) return alert("Pilih tanggal terlebih dahulu!");
+            const dateParts = fValue.split('-');
+            printTitle = `TANGGAL: ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+        } else if (fType === 'monthly') {
+            fValue = document.getElementById('filter-month').value;
+            if(!fValue) return alert("Pilih bulan dan tahun terlebih dahulu!");
+            const [yyyy, mm] = fValue.split('-');
+            const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            printTitle = `BULAN: ${namaBulan[parseInt(mm)-1].toUpperCase()} ${yyyy}`;
+        } else if (fType === 'yearly') {
+            fValue = document.getElementById('filter-year').value;
+            if(!fValue) return alert("Ketik tahun terlebih dahulu!");
+            printTitle = `TAHUN: ${fValue}`;
+        }
+        
+        window.currentPrintTitle = printTitle;
+        
+        const tbody = document.getElementById('table-laporan-body');
+        const tbodyPrint = document.getElementById('print-table-body');
+        
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400 font-medium">Memuat laporan... <i class="fa-solid fa-spinner fa-spin ml-2"></i></td></tr>';
+        
+        try {
+            const response = await fetchBackend('getLaporan', [fValue, fType]);
+            const data = Array.isArray(response) ? response : (response.data || []);
+            tbody.innerHTML = '';
+            if(tbodyPrint) tbodyPrint.innerHTML = '';
+            
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400 font-medium">Tidak ada data untuk periode ini.</td></tr>';
+                if(tbodyPrint) tbodyPrint.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-black">Tidak ada data ditemukan untuk periode ini.</td></tr>';
+                return;
+            }
+
+            data.forEach((d, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50 transition-colors";
+                
+                let badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600">${d.tipe}</span>`;
+                if(d.tipe === 'MASUK') badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> MASUK</span>`;
+                if(d.tipe === 'KELUAR') badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> KELUAR</span>`;
+                if(d.tipe === 'TIDAK_HADIR') badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700"><i class="fa-solid fa-file-signature mr-1"></i> IZIN/CUTI</span>`;
+
+                tr.innerHTML = `
+                    <td class="px-5 py-3.5"><span class="font-bold text-slate-800">${d.tanggal}</span> <br> <span class="text-[10px] text-slate-500 font-medium"><i class="fa-regular fa-clock mr-1"></i>${d.waktu}</span></td>
+                    <td class="px-5 py-3.5 font-medium text-slate-600">${d.nik}</td>
+                    <td class="px-5 py-3.5 font-bold text-slate-800">${d.nama}</td>
+                    <td class="px-5 py-3.5">${badgeType}</td>
+                    <td class="px-5 py-3.5 text-slate-600 font-medium">${d.jarak ? d.jarak + ' m' : '-'}</td>
+                    <td class="px-5 py-3.5 text-xs text-slate-500 max-w-[200px] truncate" title="${d.keterangan || '-'}">${d.keterangan || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+                
+                if(tbodyPrint) {
+                    const trPrint = document.createElement('tr');
+                    trPrint.innerHTML = `
+                        <td class="text-center">${index + 1}</td>
+                        <td class="text-center"><b>${d.tanggal}</b><br><span style="font-size: 10px; color: #555;">${d.waktu}</span></td>
+                        <td class="text-center">${d.nik}</td>
+                        <td><b>${d.nama}</b></td>
+                        <td class="text-center">${d.tipe}</td>
+                        <td class="text-center">${d.jarak ? d.jarak + 'm' : '-'}</td>
+                        <td>${d.keterangan || '-'}</td>
+                    `;
+                    tbodyPrint.appendChild(trPrint);
+                }
+            });
+        } catch (e) { 
+            tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-rose-500 font-bold"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Error memuat data. Coba lagi.</td></tr>'; 
         }
     });
 }
 
-document.getElementById('btn-filter').addEventListener('click', async () => {
-    const fType = document.getElementById('filter-type').value;
-    let fValue = '';
-    let printTitle = '';
-    
-    // Validasi input dan pembentukan Judul Cetak yang Rapih
-    if(fType === 'daily') {
-        fValue = document.getElementById('filter-date').value;
-        if(!fValue) return alert("Pilih tanggal terlebih dahulu!");
-        // Format YYYY-MM-DD ke DD/MM/YYYY
-        const dateParts = fValue.split('-');
-        printTitle = `TANGGAL: ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-    } else if (fType === 'monthly') {
-        fValue = document.getElementById('filter-month').value;
-        if(!fValue) return alert("Pilih bulan dan tahun terlebih dahulu!");
-        const [yyyy, mm] = fValue.split('-');
-        const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-        printTitle = `BULAN: ${namaBulan[parseInt(mm)-1].toUpperCase()} ${yyyy}`;
-    } else if (fType === 'yearly') {
-        fValue = document.getElementById('filter-year').value;
-        if(!fValue) return alert("Ketik tahun terlebih dahulu!");
-        printTitle = `TAHUN: ${fValue}`;
-    }
-    
-    // Simpan judul di variabel global untuk saat tombol cetak ditekan
-    window.currentPrintTitle = printTitle;
-    
-    const tbody = document.getElementById('table-laporan-body');
-    const tbodyPrint = document.getElementById('print-table-body');
-    
-    tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400 font-medium">Memuat laporan... <i class="fa-solid fa-spinner fa-spin ml-2"></i></td></tr>';
-    
-    try {
-        const data = await fetchBackend('getLaporan', [fValue, fType]);
-        tbody.innerHTML = '';
-        if(tbodyPrint) tbodyPrint.innerHTML = '';
-        
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400 font-medium">Tidak ada data untuk periode ini.</td></tr>';
-            if(tbodyPrint) tbodyPrint.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-black">Tidak ada data ditemukan untuk periode ini.</td></tr>';
-            return;
-        }
-
-        data.forEach((d, index) => {
-            // Render Tabel Tampilan UI Layar (Modern)
-            const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-50/50 transition-colors";
-            
-            // Pewarnaan Badge Tipe Kehadiran
-            let badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600">${d.tipe}</span>`;
-            if(d.tipe === 'MASUK') badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> MASUK</span>`;
-            if(d.tipe === 'KELUAR') badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> KELUAR</span>`;
-            if(d.tipe === 'TIDAK_HADIR') badgeType = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700"><i class="fa-solid fa-file-signature mr-1"></i> IZIN/CUTI</span>`;
-
-            tr.innerHTML = `
-                <td class="px-5 py-3.5"><span class="font-bold text-slate-800">${d.tanggal}</span> <br> <span class="text-[10px] text-slate-500 font-medium"><i class="fa-regular fa-clock mr-1"></i>${d.waktu}</span></td>
-                <td class="px-5 py-3.5 font-medium text-slate-600">${d.nik}</td>
-                <td class="px-5 py-3.5 font-bold text-slate-800">${d.nama}</td>
-                <td class="px-5 py-3.5">${badgeType}</td>
-                <td class="px-5 py-3.5 text-slate-600 font-medium">${d.jarak ? d.jarak + ' m' : '-'}</td>
-                <td class="px-5 py-3.5 text-xs text-slate-500 max-w-[200px] truncate" title="${d.keterangan || '-'}">${d.keterangan || '-'}</td>
-            `;
-            tbody.appendChild(tr);
-            
-            // Render Tabel Khusus Area Cetak/Print (Formal Document)
-            if(tbodyPrint) {
-                const trPrint = document.createElement('tr');
-                trPrint.innerHTML = `
-                    <td class="text-center">${index + 1}</td>
-                    <td class="text-center"><b>${d.tanggal}</b><br><span style="font-size: 10px; color: #555;">${d.waktu}</span></td>
-                    <td class="text-center">${d.nik}</td>
-                    <td><b>${d.nama}</b></td>
-                    <td class="text-center">${d.tipe}</td>
-                    <td class="text-center">${d.jarak ? d.jarak + 'm' : '-'}</td>
-                    <td>${d.keterangan || '-'}</td>
-                `;
-                tbodyPrint.appendChild(trPrint);
-            }
-        });
-    } catch (e) { 
-        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-rose-500 font-bold"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Error memuat data. Coba lagi.</td></tr>'; 
-    }
-});
-
-// SINGLE EVENT LISTENER UNTUK CETAK (Memperbaiki Bug Duplikasi)
+// Single Print Event Listener
 const btnPrintDoc = document.getElementById('btn-print');
 if (btnPrintDoc) {
     btnPrintDoc.addEventListener('click', () => {
         const printInfo = document.getElementById('print-date-info');
         const signatureDate = document.getElementById('print-date-signature');
         
-        // Memasukkan Judul Laporan yang sesuai dengan filter terakhir
         if (printInfo) {
             if(window.currentPrintTitle) {
                 printInfo.textContent = `PERIODE ${window.currentPrintTitle}`;
             } else {
                 alert("Silakan klik 'Tampilkan' terlebih dahulu untuk menyaring data yang akan dicetak.");
-                return; // Jangan print jika data belum difilter
+                return;
             }
         }
         
-        // Auto Update Tanggal Tanda Tangan ke Hari Ini
         if (signatureDate) {
             const today = new Date();
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             signatureDate.textContent = `Jakarta, ${today.getDate()} ${monthNames[today.getMonth()]} ${today.getFullYear()}`;
         }
         
-        // Trigger print browser
         window.print();
     });
 }
