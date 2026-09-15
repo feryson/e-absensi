@@ -1,5 +1,5 @@
 // --- KONFIGURASI APLIKASI ---
-const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbw6fe2GzeUKB-qAENnyqcUcWZZ78gNuWVHmLWJc_U-DbsvcSakeAjLc2i8MDEyt6HmRhQ/exec"; // PASTE URL WEB APP APPS SCRIPT ANDA DI SINI
+const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbx0UwvWJyPNF02P-8IkDQtGQHNPLw6CI3ashCIgfg4OpP8EjrdbIh4sWF6kn6EwcGoV7A/exec"; // PASTE URL WEB APP APPS SCRIPT DI SINI
 const KANTOR_LAT = -5.300456628608312;
 const KANTOR_LNG = 105.03455748021706;
 const MAKSIMAL_RADIUS_METER = 25; // Radius toleransi (meter)
@@ -52,6 +52,15 @@ window.addEventListener('load', () => {
         renderDashboardBerdasarkanRole();
     }
 });
+
+// MENCEGAH PULL-TO-REFRESH DI HP (Layar ketarik)
+document.addEventListener('touchmove', function(event) {
+    // Hanya izinkan scroll pada elemen tabel atau container yang secara spesifik boleh di-scroll
+    const isScrollable = event.target.closest('.overflow-x-auto') || event.target.closest('.overflow-y-auto');
+    if (!isScrollable) {
+        event.preventDefault();
+    }
+}, { passive: false });
 
 // PWA Install Prompt
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -173,15 +182,18 @@ function aturDropdownBerdasarkanStatus(status) {
         dom.selType.innerHTML = '<option value="">✅ Anda sedang Izin/Cuti hari ini.</option>';
         dom.selType.disabled = true;
         dom.btnAbsen.disabled = true;
-    } else if (status.keluar) {
+    } else if (status.masuk && status.keluar) {
         dom.selType.innerHTML = '<option value="">✅ Anda sudah selesai absen pulang hari ini.</option>';
         dom.selType.disabled = true;
         dom.btnAbsen.disabled = true;
     } else if (status.masuk) {
+        // HANYA BISA KELUAR JIKA SUDAH MASUK
         dom.selType.innerHTML = '<option value="KELUAR">🏃 Absen Pulang (Clock Out)</option>';
         dom.selType.disabled = false;
     } else {
+        // DEFAULT JIKA BELUM ABSEN (Wajib Masuk Dulu)
         dom.selType.innerHTML = `
+            <option value="">-- Pilih Jenis Kehadiran --</option>
             <option value="MASUK">✅ Absen Masuk (Clock In)</option>
             <option value="TIDAK_HADIR">📝 Pengajuan Izin / Cuti / Sakit</option>
         `;

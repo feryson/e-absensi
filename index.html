@@ -21,6 +21,7 @@
         /* MENCEGAH PULL-TO-REFRESH DI HP */
         html, body { 
             overscroll-behavior-y: none;
+            touch-action: pan-y; /* Mencegah bounce standar browser */
             font-family: 'Plus Jakarta Sans', sans-serif; 
         }
         
@@ -273,16 +274,37 @@
     <script src="app.js"></script>
 
     <style>
+        /* PENGATURAN CETAK (PRINT) YANG DIPERBAIKI */
         @media print {
-            body { background: white !important; color: black !important; overscroll-behavior: auto; }
+            /* Reset margin kertas sepenuhnya */
+            @page { margin: 1cm; }
+            body, html { background: white !important; color: black !important; margin: 0 !important; padding: 0 !important; }
+            
+            /* Sembunyikan SEMUA elemen secara bawaan saat diprint */
             body * { visibility: hidden; }
-            header, #tab-pegawai, #tab-laporan, #btn-filter, #btn-print, #filter-date, label, .grid { display: none !important; }
+            
+            /* Sembunyikan elemen UI yang mengganggu flow */
+            header, #login-section, #employee-section, #tab-pegawai, #tab-laporan, #btn-filter, #btn-print, #filter-date, label, .grid, #location-banner, #btn-install-pwa { display: none !important; }
+            
+            /* Tampilkan dan paksa area print berada tepat di pojok kiri atas kertas */
             #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; border: none !important; box-shadow: none !important; }
+            #print-area { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important; 
+                box-shadow: none !important; 
+            }
+            
             .print-show { display: block !important; }
             #admin-section { box-shadow: none !important; padding: 0 !important; border: none !important; }
-            table { border-collapse: collapse; width: 100%; font-size: 10px !important; }
-            th, td { border: 1px solid #cbd5e1 !important; padding: 6px 10px !important; color: black !important; }
+            
+            /* Perbaiki tabel cetak */
+            table { border-collapse: collapse; width: 100%; font-size: 10px !important; margin-top: 20px; }
+            th, td { border: 1px solid #cbd5e1 !important; padding: 8px !important; color: black !important; }
             th { background-color: #f8fafc !important; font-weight: bold; }
         }
     </style>
