@@ -2,7 +2,7 @@
 const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbx0UwvWJyPNF02P-8IkDQtGQHNPLw6CI3ashCIgfg4OpP8EjrdbIh4sWF6kn6EwcGoV7A/exec"; // PASTE URL WEB APP APPS SCRIPT DI SINI
 const KANTOR_LAT = -5.300456628608312;
 const KANTOR_LNG = 105.03455748021706;
-const MAKSIMAL_RADIUS_METER = 25; // Radius toleransi (meter)
+const MAKSIMAL_RADIUS_METER = 25; // Radius Maksimal
 
 // Variabel State
 let currentUser = null;
@@ -307,17 +307,18 @@ function validasiStatusAbsensi() {
 dom.selType.addEventListener('change', validasiStatusAbsensi);
 dom.inpKet.addEventListener('input', validasiStatusAbsensi);
 
-// Kompresi Foto Ekstra Ringan -> Cepat
+// Kompresi Foto Ekstra Ringan -> Cepat Sekejap
 function ambilFotoSelfie() {
     if (!stream) return "";
     try {
         const ctx = dom.canvas.getContext('2d');
-        dom.canvas.width = 400;
-        dom.canvas.height = 300;
+        // Resolusi ringkas 320x240 dengan kualitas 0.35 untuk pengiriman secepat kilat
+        dom.canvas.width = 320;
+        dom.canvas.height = 240;
         ctx.translate(dom.canvas.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(dom.video, 0, 0, dom.canvas.width, dom.canvas.height);
-        return dom.canvas.toDataURL('image/jpeg', 0.4); 
+        return dom.canvas.toDataURL('image/jpeg', 0.35); 
     } catch(e) { return ""; }
 }
 
@@ -396,6 +397,19 @@ async function loadDataPegawaiAdmin() {
             tbody.appendChild(tr);
         });
     } catch (e) { tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-rose-500 font-bold">Gagal memuat</td></tr>'; }
+}
+
+// MEMPERBAIKI TOMBOL CETAK DOKUMEN (PRINT)
+const btnPrint = document.getElementById('btn-print');
+if (btnPrint) {
+    btnPrint.addEventListener('click', () => {
+        const tgl = document.getElementById('filter-date').value;
+        const printInfo = document.getElementById('print-date-info');
+        if (printInfo) {
+            printInfo.textContent = tgl ? `Tanggal Presensi: ${tgl}` : `Semua Data Presensi`;
+        }
+        window.print();
+    });
 }
 
 window.hapusPegawai = async function(nik) {
