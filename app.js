@@ -1,5 +1,5 @@
 // --- KONFIGURASI APLIKASI ---
-const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbwyaBZ_RW8PpnjXZcAu3Pzi5JAeKyIJ8ydMPtFoUspR4V00CapGwS16orfVUfuTEWPQSw/exec"; // PASTE URL WEB APP APPS SCRIPT ANDA DI SINI
+const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbw6fe2GzeUKB-qAENnyqcUcWZZ78gNuWVHmLWJc_U-DbsvcSakeAjLc2i8MDEyt6HmRhQ/exec"; // PASTE URL WEB APP APPS SCRIPT ANDA DI SINI
 const KANTOR_LAT = -5.300456628608312;
 const KANTOR_LNG = 105.03455748021706;
 const MAKSIMAL_RADIUS_METER = 25; // Radius toleransi (meter)
