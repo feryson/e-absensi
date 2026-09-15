@@ -1,12 +1,12 @@
 // ==========================================
 // KONFIGURASI SISTEM
 // ==========================================
-const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbz_XXXXXXXXX_GANTI_DENGAN_URL_ANDA/exec"; // GANTI DENGAN URL DEPLOY APP SCRIPT ANDA
+const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyZ3Ch8_bHJNntp6rPmtKZEaRsgZieFNwLvybarSnZRSA7eo_G0XBtnFZKL65VH2tbo1Q/exec"; // GANTI DENGAN URL DEPLOY APP SCRIPT ANDA
 
 // Koordinat Kantor (Contoh: Monas, Jakarta)
-const KANTOR_LAT = -6.175392;
-const KANTOR_LNG = 106.827153;
-const MAKSIMAL_RADIUS_METER = 50; // Toleransi jarak absen dalam meter
+const KANTOR_LAT = -5.300651890054125;
+const KANTOR_LNG = 105.03454645519633;
+const MAKSIMAL_RADIUS_METER = 30; // Toleransi jarak absen dalam meter
 
 // Variabel State Global
 let currentUser = null;
